@@ -1,0 +1,2135 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的英文學習程式</title>
+<style>
+  :root{
+    --bg:#f6f1e9;
+    --bg-glow:#fdf8f1;
+    --card:#ffffff;
+    --ink:#241f1a;
+    --ink-soft:#8a8175;
+    --line:#e9e1d4;
+    --accent:#c96f4a;
+    --accent-2:#a8763e;
+    --accent-soft:#f4e3d7;
+    --good:#3f8a5c;
+    --good-soft:#e2f2e7;
+    --bad:#c14d4d;
+    --bad-soft:#fbe7e7;
+    --radius:16px;
+    --shadow-sm:0 1px 2px rgba(40,30,20,0.05);
+    --shadow-md:0 6px 20px rgba(40,30,20,0.07);
+    --shadow-lg:0 14px 34px rgba(40,30,20,0.12);
+    --serif:ui-serif,Georgia,"Noto Serif TC","PingFang TC",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"PingFang TC","Helvetica Neue",Arial,sans-serif;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#1b1815;
+      --bg-glow:#241f1a;
+      --card:#26221e;
+      --ink:#f1ece3;
+      --ink-soft:#a39c8f;
+      --line:#3a342c;
+      --accent:#e2895c;
+      --accent-2:#e8a874;
+      --accent-soft:#3a2c22;
+      --good:#5cb37e;
+      --good-soft:#1f3327;
+      --bad:#e2726f;
+      --bad-soft:#3a2323;
+      --shadow-sm:0 1px 2px rgba(0,0,0,0.25);
+      --shadow-md:0 6px 20px rgba(0,0,0,0.35);
+      --shadow-lg:0 14px 34px rgba(0,0,0,0.45);
+      color-scheme:dark;
+    }
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:var(--sans);
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, var(--bg-glow) 0%, transparent 60%),
+      var(--bg);
+    background-attachment:fixed;
+    color:var(--ink);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  header{
+    padding:36px 24px 0;
+    max-width:800px;
+    margin:0 auto;
+  }
+  h1{
+    font-family:var(--serif);
+    font-size:1.9rem;
+    font-weight:600;
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+  .sub{
+    color:var(--ink-soft);
+    font-size:0.92rem;
+    margin-bottom:20px;
+  }
+  nav{
+    display:flex;
+    gap:4px;
+    max-width:800px;
+    margin:0 auto;
+    padding:6px;
+    background:var(--accent-soft);
+    border-radius:16px;
+    overflow-x:auto;
+  }
+  nav button{
+    border:none;
+    background:none;
+    padding:10px 16px;
+    font-size:0.88rem;
+    font-weight:600;
+    color:var(--accent-2);
+    cursor:pointer;
+    border-radius:11px;
+    white-space:nowrap;
+    transition:background .18s ease, color .18s ease, box-shadow .18s ease;
+  }
+  nav button:hover{ color:var(--accent); }
+  nav button.active{
+    background:var(--card);
+    color:var(--accent);
+    box-shadow:var(--shadow-sm);
+  }
+  main{
+    max-width:800px;
+    margin:0 auto;
+    padding:24px;
+  }
+  .panel{display:none;}
+  .panel.active{ display:block; animation:fadeIn .3s ease; }
+  @keyframes fadeIn{
+    from{opacity:0; transform:translateY(4px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:22px;
+    margin-bottom:16px;
+    box-shadow:var(--shadow-sm);
+    transition:box-shadow .2s ease, transform .2s ease;
+  }
+  .stat-row{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+    margin-bottom:16px;
+  }
+  .stat{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px 12px;
+    text-align:center;
+    box-shadow:var(--shadow-sm);
+  }
+  .stat .num{
+    font-family:var(--serif);
+    font-size:1.9rem;
+    font-weight:700;
+    color:var(--accent);
+    line-height:1.1;
+  }
+  .stat .label{
+    font-size:0.78rem;
+    color:var(--ink-soft);
+    margin-top:4px;
+  }
+
+  /* Flashcard */
+  #flash-area{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:16px;
+  }
+  .flashcard{
+    width:100%;
+    max-width:420px;
+    min-height:220px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:20px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:28px 24px;
+    text-align:center;
+    cursor:pointer;
+    user-select:none;
+    box-shadow:var(--shadow-md);
+    transition:box-shadow .2s ease, transform .15s ease;
+  }
+  .flashcard:hover{ box-shadow:var(--shadow-lg); transform:translateY(-2px); }
+  .flashcard:active{ transform:translateY(0) scale(0.995); }
+  .flashcard .term{
+    font-family:var(--serif);
+    font-size:1.8rem;
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+  }
+  .icon-btn{
+    border:none;
+    background:var(--accent-soft);
+    color:var(--accent);
+    width:38px;
+    height:38px;
+    border-radius:50%;
+    font-size:1.1rem;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+    transition:transform .15s ease, background .15s ease;
+  }
+  .icon-btn:hover{ transform:scale(1.08); }
+  .icon-btn:active{ transform:scale(0.94); }
+  .icon-btn.listening{
+    background:var(--bad);
+    color:#fff;
+    animation:pulse 1s infinite;
+  }
+  @keyframes pulse{
+    0%{opacity:1;} 50%{opacity:0.55;} 100%{opacity:1;}
+  }
+  .pron-result{
+    margin-top:10px;
+    font-size:0.9rem;
+    padding:8px 12px;
+    border-radius:10px;
+    animation:fadeIn .2s ease;
+  }
+  .pron-result.ok{ background:var(--good-soft); color:var(--good); }
+  .pron-result.bad{ background:var(--bad-soft); color:var(--bad); }
+  .word-img{
+    width:100%;
+    max-width:260px;
+    max-height:160px;
+    object-fit:cover;
+    border-radius:14px;
+    margin-bottom:10px;
+    box-shadow:var(--shadow-sm);
+  }
+  .word-emoji{
+    font-size:3.4rem;
+    margin-bottom:8px;
+  }
+  .credit{
+    font-size:0.68rem;
+    color:var(--ink-soft);
+    margin-bottom:8px;
+    opacity:0.8;
+  }
+  .flashcard .syllables{
+    font-size:0.92rem;
+    color:var(--ink-soft);
+    letter-spacing:0.5px;
+    margin-top:4px;
+    font-family:"SF Mono",Menlo,monospace;
+  }
+  .pos-tag{
+    display:inline-block;
+    font-size:0.7rem;
+    padding:3px 12px;
+    border-radius:20px;
+    background:var(--accent-soft);
+    color:var(--accent-2);
+    margin-top:12px;
+    font-weight:700;
+    letter-spacing:0.03em;
+  }
+  .flashcard .meaning{
+    font-family:var(--serif);
+    font-size:1.25rem;
+    color:var(--ink);
+    margin-top:10px;
+    font-weight:600;
+  }
+  .phonics-note{
+    font-size:0.82rem;
+    color:var(--ink-soft);
+    background:var(--accent-soft);
+    border-radius:10px;
+    padding:10px 14px;
+    margin-top:12px;
+    text-align:left;
+    line-height:1.6;
+  }
+  .flashcard .example{
+    font-size:0.9rem;
+    color:var(--ink-soft);
+    margin-top:10px;
+    font-style:italic;
+  }
+  .example-zh{
+    font-size:0.85rem;
+    color:var(--ink-soft);
+    margin-top:2px;
+    opacity:0.85;
+  }
+  .flashcard .hint{
+    font-size:0.8rem;
+    color:var(--ink-soft);
+    margin-top:16px;
+  }
+  .btn-row{
+    display:flex;
+    gap:12px;
+  }
+  button.action{
+    border:none;
+    border-radius:12px;
+    padding:12px 22px;
+    font-size:0.95rem;
+    cursor:pointer;
+    font-weight:600;
+    transition:transform .15s ease, box-shadow .15s ease, background .15s ease, opacity .15s ease;
+  }
+  button.action:active{ transform:scale(0.97); }
+  .btn-know{ background:var(--good); color:#fff; box-shadow:0 4px 14px rgba(63,138,92,0.3); }
+  .btn-know:hover{ transform:translateY(-1px); box-shadow:0 6px 18px rgba(63,138,92,0.38); }
+  .btn-unknow{ background:var(--bad); color:#fff; box-shadow:0 4px 14px rgba(193,77,77,0.3); }
+  .btn-unknow:hover{ transform:translateY(-1px); box-shadow:0 6px 18px rgba(193,77,77,0.38); }
+  .btn-primary{ background:var(--accent); color:#fff; box-shadow:0 4px 14px rgba(201,111,74,0.32); }
+  .btn-primary:hover{ transform:translateY(-1px); box-shadow:0 6px 18px rgba(201,111,74,0.4); }
+  .btn-ghost{ background:var(--card); border:1px solid var(--line); color:var(--ink); }
+  .btn-ghost:hover{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent-2); }
+
+  /* Quiz */
+  .quiz-q{
+    font-family:var(--serif);
+    font-size:1.4rem;
+    font-weight:600;
+    margin-bottom:16px;
+  }
+  .quiz-opt{
+    display:block;
+    width:100%;
+    text-align:left;
+    padding:13px 16px;
+    margin-bottom:10px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:var(--card);
+    cursor:pointer;
+    font-size:0.95rem;
+    transition:border-color .15s ease, background .15s ease, transform .1s ease;
+  }
+  .quiz-opt:not(:disabled):hover{ border-color:var(--accent); background:var(--accent-soft); }
+  .quiz-opt:not(:disabled):active{ transform:scale(0.99); }
+  .quiz-opt.correct{ background:var(--good-soft); border-color:var(--good); }
+  .quiz-opt.wrong{ background:var(--bad-soft); border-color:var(--bad); }
+
+  /* Manage */
+  .form-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-bottom:10px;
+  }
+  input, textarea, select{
+    width:100%;
+    padding:10px 12px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    font-size:0.9rem;
+    font-family:inherit;
+    background:var(--card);
+    color:var(--ink);
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  input:focus, textarea:focus, select:focus{
+    outline:none;
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px var(--accent-soft);
+  }
+  textarea{resize:vertical;}
+  .word-list{
+    max-height:340px;
+    overflow-y:auto;
+  }
+  .word-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:11px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .word-item:last-child{ border-bottom:none; }
+  .word-item .info b{font-size:0.95rem;}
+  .word-item .info span{
+    display:block;
+    color:var(--ink-soft);
+    font-size:0.82rem;
+  }
+  .word-item .box-tag{
+    font-size:0.7rem;
+    padding:3px 10px;
+    border-radius:20px;
+    background:var(--accent-soft);
+    color:var(--accent-2);
+    margin-right:8px;
+    font-weight:600;
+  }
+  .del-btn{
+    border:none;
+    background:none;
+    color:var(--bad);
+    cursor:pointer;
+    font-size:1.1rem;
+    transition:transform .15s ease;
+    border-radius:8px;
+    padding:4px 6px;
+  }
+  .del-btn:hover{ transform:scale(1.12); background:var(--bad-soft); }
+  .heatmap{
+    display:grid;
+    grid-template-columns:repeat(15,1fr);
+    gap:5px;
+  }
+  .heatmap .day{
+    aspect-ratio:1;
+    border-radius:6px;
+    background:var(--line);
+    transition:background .15s ease, transform .15s ease;
+  }
+  .heatmap .day:hover{ transform:scale(1.15); }
+  .heatmap .day.active{ background:var(--accent); box-shadow:0 2px 6px rgba(201,111,74,0.35); }
+  .empty-msg{
+    color:var(--ink-soft);
+    text-align:center;
+    padding:34px 0;
+  }
+  h3{
+    margin-top:0;
+    font-family:var(--serif);
+    font-weight:600;
+    letter-spacing:-0.01em;
+  }
+
+  .idiom-subtab.active{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+  }
+
+  .grammar-tag-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-top:10px;
+  }
+  .grammar-tag{
+    display:inline-block;
+    font-size:0.72rem;
+    padding:4px 11px;
+    border-radius:20px;
+    background:var(--accent-soft);
+    color:var(--accent-2);
+    font-weight:600;
+    cursor:pointer;
+    transition:background .15s ease, transform .15s ease;
+  }
+  .grammar-tag:hover{ background:var(--accent); color:#fff; transform:translateY(-1px); }
+
+  /* Reading */
+  .reading-card{cursor:pointer;}
+  .reading-card:hover{ box-shadow:var(--shadow-md); transform:translateY(-2px); }
+  .reading-text{
+    font-family:var(--serif);
+    line-height:1.9;
+    font-size:1.05rem;
+  }
+  .q-block{margin-bottom:18px;}
+  .q-title{font-weight:600;margin-bottom:8px;}
+  .q-opt{
+    display:block;
+    padding:10px 14px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    margin-bottom:6px;
+    cursor:pointer;
+    font-size:0.92rem;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .q-opt:hover{ border-color:var(--accent); }
+  .q-opt input{width:auto;margin-right:8px;}
+  .q-opt.opt-correct{ background:var(--good-soft); border-color:var(--good); }
+  .q-opt.opt-wrong{ background:var(--bad-soft); border-color:var(--bad); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📚 我的英文學習程式</h1>
+  <div class="sub">文法邏輯 ・ 單字卡複習 ・ 小測驗 ・ 學習進度</div>
+</header>
+
+<nav>
+  <button class="tab-btn active" data-tab="grammar">文法邏輯</button>
+  <button class="tab-btn" data-tab="flash">單字卡</button>
+  <button class="tab-btn" data-tab="quiz">小測驗</button>
+  <button class="tab-btn" data-tab="reading">閱讀</button>
+  <button class="tab-btn" data-tab="idioms">俗語支線</button>
+  <button class="tab-btn" data-tab="progress">學習進度</button>
+  <button class="tab-btn" data-tab="manage">單字庫管理</button>
+</nav>
+
+<main>
+
+  <!-- GRAMMAR LOGIC (書本式，預設首頁) -->
+  <section class="panel active" id="panel-grammar">
+    <div id="grammar-area"></div>
+  </section>
+
+  <!-- FLASHCARD -->
+  <section class="panel" id="panel-flash">
+    <div class="card" style="padding:14px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span class="sub" style="margin:0;">發音語音：</span>
+      <select id="voice-select" style="flex:1;min-width:180px;"></select>
+      <button class="action btn-ghost" id="voice-test-btn">試聽</button>
+    </div>
+    <div id="flash-area"></div>
+  </section>
+
+  <!-- QUIZ -->
+  <section class="panel" id="panel-quiz">
+    <div class="card" id="quiz-area"></div>
+  </section>
+
+  <!-- READING -->
+  <section class="panel" id="panel-reading">
+    <div id="reading-area"></div>
+  </section>
+
+  <!-- IDIOMS (獨立支線) -->
+  <section class="panel" id="panel-idioms">
+    <div class="sub" style="margin-bottom:14px;">獨立的俗語學習支線，有自己的進度，不會混進主要單字庫</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button class="action btn-ghost idiom-subtab active" data-idiom-tab="flash">俗語卡</button>
+      <button class="action btn-ghost idiom-subtab" data-idiom-tab="quiz">俗語測驗</button>
+    </div>
+    <div id="idiom-flash-area"></div>
+    <div class="card" id="idiom-quiz-area" style="display:none;"></div>
+  </section>
+
+  <!-- PROGRESS -->
+  <section class="panel" id="panel-progress">
+    <div class="stat-row">
+      <div class="stat"><div style="font-size:1.1rem;">🔥</div><div class="num" id="stat-streak">0</div><div class="label">連續學習天數</div></div>
+      <div class="stat"><div style="font-size:1.1rem;">📚</div><div class="num" id="stat-total">0</div><div class="label">單字總數</div></div>
+      <div class="stat"><div style="font-size:1.1rem;">⭐</div><div class="num" id="stat-mastered">0</div><div class="label">已熟練單字</div></div>
+    </div>
+    <div class="card">
+      <h3>各單元進度</h3>
+      <div id="module-progress"></div>
+    </div>
+    <div class="card">
+      <h3>最近 30 天學習紀錄</h3>
+      <div class="heatmap" id="heatmap"></div>
+    </div>
+    <div class="card">
+      <h3>測驗歷史</h3>
+      <div id="quiz-history"></div>
+    </div>
+  </section>
+
+  <!-- MANAGE -->
+  <section class="panel" id="panel-manage">
+    <div class="card">
+      <h3 id="form-title">新增單字 / 片語</h3>
+      <div class="form-grid">
+        <input id="in-en" placeholder="英文（例：improve）">
+        <select id="in-pos">
+          <option value="">詞性（選填）</option>
+          <option value="動詞">動詞</option>
+          <option value="名詞">名詞</option>
+          <option value="形容詞">形容詞</option>
+          <option value="副詞">副詞</option>
+          <option value="介系詞">介系詞</option>
+          <option value="連接詞">連接詞</option>
+          <option value="片語">片語</option>
+        </select>
+      </div>
+      <div class="form-grid">
+        <input id="in-syllables" placeholder="音節拆分（選填，例：im·prove）">
+        <input id="in-ipa" placeholder="國際音標 IPA（選填，例：/ɪmˈpruv/）">
+      </div>
+      <input id="in-phonics" placeholder="發音原理說明（選填，例：重音在第二音節...）" style="margin-bottom:10px;">
+
+      <div class="sub" style="margin-bottom:6px;">中文意思與例句（一個字常有不只一個意思，最多可填 3 組，第一組必填）</div>
+      <div class="form-grid">
+        <input id="in-zh-1" placeholder="意思 1（必填）">
+        <input id="in-example-1" placeholder="例句 1（選填）">
+      </div>
+      <input id="in-example-zh-1" placeholder="例句 1 中文翻譯（選填）" style="margin-bottom:10px;">
+      <div class="form-grid">
+        <input id="in-zh-2" placeholder="意思 2（選填）">
+        <input id="in-example-2" placeholder="例句 2（選填）">
+      </div>
+      <input id="in-example-zh-2" placeholder="例句 2 中文翻譯（選填）" style="margin-bottom:10px;">
+      <div class="form-grid">
+        <input id="in-zh-3" placeholder="意思 3（選填）">
+        <input id="in-example-3" placeholder="例句 3（選填）">
+      </div>
+      <input id="in-example-zh-3" placeholder="例句 3 中文翻譯（選填）" style="margin-bottom:10px;">
+      <div class="btn-row">
+        <button class="action btn-primary" id="add-word-btn">新增</button>
+        <button class="action btn-ghost" id="cancel-edit-btn" style="display:none;">取消編輯</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>批次匯入</h3>
+      <div class="sub" style="margin-bottom:8px;">每行一組，格式：英文 - 中文意思（例句可省略）</div>
+      <textarea id="bulk-input" rows="4" placeholder="ambitious - 有野心的&#10;consequence - 後果"></textarea>
+      <button class="action btn-primary" id="bulk-add-btn" style="margin-top:8px;">批次新增</button>
+    </div>
+
+    <div class="card">
+      <h3>單字庫（<span id="word-count">0</span>）</h3>
+      <div class="word-list" id="word-list"></div>
+    </div>
+
+    <div class="card">
+      <h3>資料備份</h3>
+      <div class="sub" style="margin-bottom:10px;">資料只存在這個瀏覽器裡，清除瀏覽器資料、換電腦、或搬動這個資料夾都可能導致資料遺失，建議不定期匯出備份一份</div>
+      <div class="btn-row">
+        <button class="action btn-ghost" id="export-btn">匯出備份</button>
+        <button class="action btn-ghost" id="import-btn">匯入備份</button>
+      </div>
+      <input type="file" id="import-file" accept="application/json" style="display:none;">
+    </div>
+
+    <div class="card">
+      <h3>重設單字庫</h3>
+      <div class="sub" style="margin-bottom:10px;">會清空目前所有單字，換成 20 個較簡單的起始單字（進度記錄不受影響）</div>
+      <button class="action btn-ghost" id="reset-vocab-btn">重設為簡易起始單字</button>
+    </div>
+  </section>
+
+</main>
+
+<script>
+const LS_VOCAB = 'el_vocab';
+const LS_LOG = 'el_studylog';
+const LS_QUIZ = 'el_quizhistory';
+
+const BOX_INTERVAL_DAYS = [0,1,2,4,7,14]; // index = box number (1-5)
+
+const SEED = [
+  { en:"improve", zh:"改善、進步", example:"I want to improve my English.", syllables:"im·prove", pos:"動詞", emoji:"📈",
+    image:"https://api.openverse.org/v1/images/8d84a364-a2f8-483f-acca-4cf8e037082e/thumb/", credit:"paola.bazurto4", creditUrl:"https://www.flickr.com/photos/131543794@N04/16785701705",
+    ipa:"/ɪmˈpruv/", phonicsNote:"重音在第二音節。prove 裡的「o...e」沒有照規則發 /oʊ/，而是唸長母音 /u/，跟 move、lose 一樣是特例，要單獨記。",
+    exampleZh:"我想要改善我的英文。" },
+  { en:"decide", zh:"決定", example:"We need to decide soon.", syllables:"de·cide", pos:"動詞", emoji:"🤔",
+    image:"https://api.openverse.org/v1/images/455c0e57-df05-4506-923b-b0d92d1d71e3/thumb/", credit:"ccPixs.com", creditUrl:"https://www.flickr.com/photos/86530412@N02/8226451812",
+    ipa:"/dɪˈsaɪd/", phonicsNote:"重音在第二音節。這是「i-consonant-e」的不發音 e 規則：字尾 e 本身不發音，但會讓前面的 i 唸出字母本身的音 /aɪ/。",
+    exampleZh:"我們需要盡快做決定。" },
+  { en:"borrow", zh:"借（東西）", example:"Can I borrow your pen?", syllables:"bor·row", pos:"動詞", emoji:"🤝",
+    image:"https://api.openverse.org/v1/images/550ba8ea-0a81-4bfd-a60a-c6067ef09466/thumb/", credit:"Fran1001hk", creditUrl:"https://commons.wikimedia.org/w/index.php?curid=77569260",
+    ipa:"/ˈbɑroʊ/", phonicsNote:"重音在第一音節。字尾「ow」在這裡發 /oʊ/，跟 grow、know 是同一種常見組合。",
+    exampleZh:"我可以跟你借筆嗎？" },
+  { en:"explain", zh:"解釋", example:"Please explain how it works.", syllables:"ex·plain", pos:"動詞", emoji:"💡",
+    image:"https://api.openverse.org/v1/images/50f29765-d25c-4087-9ec3-d320d3298a9b/thumb/", credit:"Risinghope23", creditUrl:"https://commons.wikimedia.org/w/index.php?curid=76318118",
+    ipa:"/ɪkˈspleɪn/", phonicsNote:"重音在第二音節。母音組合「ai」幾乎固定發長音 /eɪ/，像 rain、main 都是同樣規則。",
+    exampleZh:"請解釋一下這個是怎麼運作的。" },
+  { en:"compare", zh:"比較", example:"Let's compare the two options.", syllables:"com·pare", pos:"動詞", emoji:"⚖️",
+    image:"https://api.openverse.org/v1/images/006183c0-3419-4102-a06e-0bac71365306/thumb/", credit:"Nouhailler", creditUrl:"https://www.flickr.com/photos/7737054@N07/6340735390",
+    ipa:"/kəmˈpɛr/", phonicsNote:"重音在第二音節。第一音節 com- 沒有重音，母音弱化成模糊音 /ə/（schwa），這是英文非重音節最常見的現象。",
+    exampleZh:"我們來比較這兩個選項吧。" },
+  { en:"suggest", zh:"建議", example:"She suggested a new restaurant.", syllables:"sug·gest", pos:"動詞", emoji:"💭",
+    image:"https://api.openverse.org/v1/images/0de3c11a-9eff-4f5e-8e65-530fdc27f021/thumb/", credit:"sethoscope", creditUrl:"https://www.flickr.com/photos/57845051@N00/2352330747",
+    ipa:"/səgˈdʒɛst/", phonicsNote:"重音在第二音節。「gg」後面接 e，g 發軟音 /dʒ/（像 j），這是「g + e/i/y 通常發軟音」的規則。",
+    exampleZh:"她建議了一家新餐廳。" },
+  { en:"prepare", zh:"準備", example:"I need to prepare for the meeting.", syllables:"pre·pare", pos:"動詞", emoji:"🎒",
+    image:"https://api.openverse.org/v1/images/46564eae-88a4-407f-b128-4bcd6cd79cad/thumb/", credit:"theglobalpanorama", creditUrl:"https://www.flickr.com/photos/121483302@N02/15010904259",
+    ipa:"/prɪˈpɛr/", phonicsNote:"重音在第二音節。跟 compare 一樣，字尾「are」在重讀時發 /ɛr/。",
+    exampleZh:"我需要為這場會議做準備。" },
+  { en:"continue", zh:"繼續", example:"Please continue reading.", syllables:"con·tin·ue", pos:"動詞", emoji:"▶️",
+    image:"https://api.openverse.org/v1/images/a6239f6a-a82b-48d3-b601-cbe7f753a544/thumb/", credit:"TireZoo", creditUrl:"https://www.flickr.com/photos/48722259@N02/6549504699",
+    ipa:"/kənˈtɪnju/", phonicsNote:"重音在第二音節。子音後面的「u」常帶 /j/ 滑音，發成 /ju/，跟 use、cute 是同一種規則。",
+    exampleZh:"請繼續讀下去。" },
+  { en:"arrive", zh:"到達", example:"The train will arrive at noon.", syllables:"ar·rive", pos:"動詞", emoji:"🛬",
+    image:"https://api.openverse.org/v1/images/3cfb8d2f-ce15-4671-8975-2f7b98e0b61d/thumb/", credit:"Livewireshock", creditUrl:"https://commons.wikimedia.org/w/index.php?curid=27805181",
+    ipa:"/əˈraɪv/", phonicsNote:"重音在第二音節。跟 decide 一樣，「i-consonant-e」讓 i 唸長音 /aɪ/。",
+    exampleZh:"火車會在中午抵達。" },
+  { en:"important", zh:"重要的", example:"This is an important decision.", syllables:"im·por·tant", pos:"形容詞", emoji:"⭐",
+    image:"https://api.openverse.org/v1/images/c14b2f31-edf9-40f5-a232-49174579247a/thumb/", credit:"Lenny K Photography", creditUrl:"https://www.flickr.com/photos/57527070@N06/28899159011",
+    ipa:"/ɪmˈpɔrtənt/", phonicsNote:"重音在第二音節。字尾「-ant」是非重音節，弱化成模糊音 /ənt/。",
+    exampleZh:"這是一個重要的決定。" },
+  { en:"interesting", zh:"有趣的", example:"That was an interesting movie.", syllables:"in·ter·est·ing", pos:"形容詞", emoji:"🤩",
+    image:"https://api.openverse.org/v1/images/48baadae-4985-40f3-b239-0388bcc0c916/thumb/", credit:"BuffaloLibrary", creditUrl:"https://www.flickr.com/photos/79756778@N00/16108675629",
+    ipa:"/ˈɪntrəstɪŋ/", phonicsNote:"重音在第一音節。口語中間的「er」常被省略，唸成三個音節而不是四個，這是很自然的口語「音節省略」現象。",
+    exampleZh:"那是一部有趣的電影。" },
+  { en:"difficult", zh:"困難的", example:"This question is difficult.", syllables:"dif·fi·cult", pos:"形容詞", emoji:"🧗",
+    image:"https://api.openverse.org/v1/images/77f729c0-6dc9-4e10-913a-a445c4c798b7/thumb/", credit:"BLM Oregon & Washington", creditUrl:"https://www.flickr.com/photos/50169152@N06/11406842595",
+    ipa:"/ˈdɪfɪkəlt/", phonicsNote:"重音在第一音節，後面兩個音節都弱化成模糊音，唸起來要快而輕。",
+    exampleZh:"這個問題很困難。" },
+  { en:"possible", zh:"可能的", example:"It's possible to finish today.", syllables:"pos·si·ble", pos:"形容詞", emoji:"✅",
+    image:"https://api.openverse.org/v1/images/eba6487d-a0c5-46b1-9d44-d133ce63a7ce/thumb/", credit:"svgsilh.com", creditUrl:"https://svgsilh.com/ms/ffc107/image/42926.html",
+    ipa:"/ˈpɑsəbəl/", phonicsNote:"重音在第一音節。字尾「-ble」裡的 e 不發音，只是讓 b 和 l 之間帶一點模糊母音方便發音。",
+    exampleZh:"今天有可能完成。" },
+  { en:"different", zh:"不同的", example:"Our opinions are different.", syllables:"dif·fer·ent", pos:"形容詞", emoji:"🔀",
+    image:"https://api.openverse.org/v1/images/ea091b61-063a-4aae-9a85-aad0713ec548/thumb/", credit:"wbaiv", creditUrl:"https://www.flickr.com/photos/9998127@N06/8030075978",
+    ipa:"/ˈdɪfrənt/", phonicsNote:"重音在第一音節。口語常把中間的「er」省略，唸成兩個音節（dif-frent）而不是三個。",
+    exampleZh:"我們的意見不同。" },
+  { en:"necessary", zh:"必要的", example:"Water is necessary for life.", syllables:"nec·es·sar·y", pos:"形容詞", emoji:"🔑",
+    image:"https://api.openverse.org/v1/images/f691c80d-453c-47cc-b752-cb968c850fac/thumb/", credit:"Boston Public Library", creditUrl:"https://www.flickr.com/photos/24029425@N06/7802502670",
+    ipa:"/ˈnɛsəˌsɛri/", phonicsNote:"重音在第一音節。美式發音會把最後一個音節唸得比較清楚，這點跟英式不太一樣。",
+    exampleZh:"水對生命是必要的。" },
+  { en:"although", zh:"雖然", example:"Although it rained, we went out.", syllables:"al·though", pos:"連接詞", emoji:"🌦️",
+    image:"https://api.openverse.org/v1/images/d5f5e006-1805-461f-a05b-0001fca92964/thumb/", credit:"VinothChandar", creditUrl:"https://www.flickr.com/photos/44345361@N06/5450601450",
+    ipa:"/ɔlˈðoʊ/", phonicsNote:"「th」在這裡發有聲的 /ð/（像 the）。字尾「ough」發 /oʊ/——ough 是英文最不規則的字母組合，同樣拼法在 through、tough、cough 裡發音完全不同，只能個別記。",
+    exampleZh:"雖然下雨了，我們還是出門了。" },
+  { en:"because", zh:"因為", example:"I stayed home because I was sick.", syllables:"be·cause", pos:"連接詞", emoji:"🔗",
+    image:"https://api.openverse.org/v1/images/f4e0a18d-5c94-4507-b7a9-61d6aff05dc4/thumb/", credit:"marfis75", creditUrl:"https://www.flickr.com/photos/45409431@N00/12741087104",
+    ipa:"/bɪˈkʌz/", phonicsNote:"重音在第二音節。這個字美式和英式的母音發音不太一樣（英式偏 /kɒz/），聽外國人唸法可能會不同，屬正常現象。",
+    exampleZh:"我因為生病所以待在家。" },
+  { en:"however", zh:"然而、但是", example:"I like it. However, it's expensive.", syllables:"how·ev·er", pos:"副詞", emoji:"🔄",
+    image:"https://api.openverse.org/v1/images/c5a1820e-c14a-4ccf-ab56-4de79800ce48/thumb/", credit:"Qrmoo3", creditUrl:"https://commons.wikimedia.org/w/index.php?curid=53923564",
+    ipa:"/haʊˈɛvər/", phonicsNote:"重音在第二音節。這裡的「ow」發雙母音 /aʊ/，跟 borrow 的 /oʊ/ 不同，說明「ow」沒有固定規則，要看單字個別記。",
+    exampleZh:"我喜歡它，然而它很貴。" },
+  { en:"example", zh:"例子", example:"Can you give me an example?", syllables:"ex·am·ple", pos:"名詞", emoji:"📌",
+    image:"https://api.openverse.org/v1/images/a417459b-d425-487f-892c-9a9545c7af4a/thumb/", credit:"Ogilvy PR", creditUrl:"https://www.flickr.com/photos/27132029@N06/3038128453",
+    ipa:"/ɪgˈzæmpəl/", phonicsNote:"開頭的「x」在這裡發濁音 /gz/ 而不是清音 /ks/，因為重音落在後面的母音上，這是 x 發音的常見規則之一。",
+    exampleZh:"你可以給我一個例子嗎？" },
+  { en:"remember", zh:"記得", example:"I remember your name.", syllables:"re·mem·ber", pos:"動詞", emoji:"🧠",
+    image:"https://api.openverse.org/v1/images/6a9b1e28-0a4a-4964-a3eb-ed194627584c/thumb/", credit:"J_O_I_D", creditUrl:"https://www.flickr.com/photos/23963249@N02/2325865367",
+    ipa:"/rɪˈmɛmbər/", phonicsNote:"重音在第二音節，第一、三音節都弱化成模糊音。",
+    exampleZh:"我記得你的名字。" }
+];
+
+function seedToWord(s, i){
+  return {
+    id: 'w'+Date.now()+i,
+    en:s.en, syllables:s.syllables||'', pos:s.pos||'', emoji:s.emoji||'',
+    image:s.image||'', credit:s.credit||'', creditUrl:s.creditUrl||'',
+    ipa:s.ipa||'', phonicsNote:s.phonicsNote||'',
+    meanings:[{zh:s.zh, example:s.example||'', exampleZh:s.exampleZh||''}],
+    box:1, nextReview: todayStr()
+  };
+}
+
+function primaryZh(w){ return (w.meanings && w.meanings[0]) ? w.meanings[0].zh : ''; }
+
+// 使用者自己輸入的單字內容在插入畫面前先跳脫，避免打到 < > 等符號時版面跑掉
+function esc(str){
+  if(str === undefined || str === null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function loadVocab(){
+  let v = JSON.parse(localStorage.getItem(LS_VOCAB) || 'null');
+  if(!v){
+    v = SEED.map(seedToWord);
+    saveVocab(v);
+  } else {
+    // 相容舊版資料：把舊的單一 zh/example 轉成 meanings 陣列，並自動補上新版才有的音標／發音原理／例句翻譯（不影響已累積的複習進度）
+    let migrated = false;
+    const seedByEn = {};
+    SEED.forEach(s=>{ seedByEn[s.en.toLowerCase()] = s; });
+    v.forEach(w=>{
+      if(!w.meanings){
+        w.meanings = [{ zh: w.zh || '', example: w.example || '', exampleZh:'' }];
+        delete w.zh; delete w.example;
+        migrated = true;
+      }
+      const seed = seedByEn[w.en.toLowerCase()];
+      if(seed){
+        if(!w.ipa && seed.ipa){ w.ipa = seed.ipa; migrated = true; }
+        if(!w.phonicsNote && seed.phonicsNote){ w.phonicsNote = seed.phonicsNote; migrated = true; }
+        if(w.meanings[0] && !w.meanings[0].exampleZh && seed.exampleZh){
+          w.meanings[0].exampleZh = seed.exampleZh;
+          migrated = true;
+        }
+      }
+    });
+    if(migrated) saveVocab(v);
+  }
+  return v;
+}
+function saveVocab(v){ localStorage.setItem(LS_VOCAB, JSON.stringify(v)); }
+
+function loadLog(){ return JSON.parse(localStorage.getItem(LS_LOG) || '{}'); }
+function saveLog(l){ localStorage.setItem(LS_LOG, JSON.stringify(l)); }
+function markStudied(){
+  const l = loadLog();
+  l[todayStr()] = true;
+  saveLog(l);
+}
+
+function loadQuizHistory(){ return JSON.parse(localStorage.getItem(LS_QUIZ) || '[]'); }
+function saveQuizHistory(h){ localStorage.setItem(LS_QUIZ, JSON.stringify(h)); }
+
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function addDays(dateStr, days){
+  const d = new Date(dateStr+'T00:00:00');
+  d.setDate(d.getDate()+days);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+let vocab = loadVocab();
+
+/* ---------- IDIOMS（獨立支線，不併入主單字庫） ---------- */
+const LS_IDIOMS = 'el_idioms';
+const LS_IDIOM_QUIZ = 'el_idiom_quiz';
+
+const IDIOMS = [
+  ["break the ice","打破僵局、緩和氣氛","He told a joke to break the ice at the meeting.","🧊","他在會議上講了個笑話來打破僵局。"],
+  ["piece of cake","小菜一碟、非常簡單","Don't worry, the test was a piece of cake.","🍰","別擔心，這場考試簡單得很。"],
+  ["under the weather","身體不舒服","I'm feeling a bit under the weather today.","🌧️","我今天覺得有點不舒服。"],
+  ["hit the books","用功讀書","I need to hit the books before the exam.","📖","我考試前需要用功讀書。"],
+  ["once in a blue moon","千載難逢、很少發生","We only eat out once in a blue moon.","🌙","我們很少出去外食。"],
+  ["cost an arm and a leg","非常昂貴","That car costs an arm and a leg.","💸","那台車貴得要命。"],
+  ["let the cat out of the bag","洩漏秘密","She let the cat out of the bag about the surprise party.","🐱","她洩漏了驚喜派對的秘密。"],
+  ["on the ball","反應敏捷、做事得力","He's really on the ball at work.","⚽","他工作起來反應很快、很得力。"],
+  ["speak of the devil","說曹操，曹操到","Speak of the devil, here he comes!","😈","說曹操，曹操到，他來了！"],
+  ["hit the nail on the head","一針見血、說中要點","You hit the nail on the head with that comment.","🔨","你那句話真是一針見血。"],
+  ["call it a day","到此為止、收工","Let's call it a day and go home.","🌆","我們今天就到此為止，回家吧。"],
+  ["break a leg","祝你好運（尤指表演前）","Break a leg at your audition tomorrow!","🍀","祝你明天試鏡好運！"],
+  ["get out of hand","失控","The party got out of hand.","🌀","那場派對失控了。"],
+  ["give the benefit of the doubt","姑且相信、給予信任","I'll give you the benefit of the doubt this time.","🤝","這次我就姑且相信你。"],
+  ["best of both worlds","兩全其美","Working from home gives me the best of both worlds.","🌍","在家工作讓我兩全其美。"]
+];
+
+function seedIdiom(idm, i){
+  return {
+    id:'i'+Date.now()+i, en:idm[0], syllables:'', pos:'俗語', emoji:idm[3],
+    image:'', credit:'', creditUrl:'',
+    meanings:[{zh:idm[1], example:idm[2], exampleZh:idm[4]||''}],
+    box:1, nextReview: todayStr()
+  };
+}
+
+function loadIdioms(){
+  let v = JSON.parse(localStorage.getItem(LS_IDIOMS) || 'null');
+  if(!v){
+    v = IDIOMS.map(seedIdiom);
+    saveIdioms(v);
+  } else {
+    let migrated = false;
+    const idiomByEn = {};
+    IDIOMS.forEach(idm=>{ idiomByEn[idm[0].toLowerCase()] = idm; });
+    v.forEach(w=>{
+      const idm = idiomByEn[w.en.toLowerCase()];
+      if(idm && w.meanings && w.meanings[0] && !w.meanings[0].exampleZh && idm[4]){
+        w.meanings[0].exampleZh = idm[4];
+        migrated = true;
+      }
+    });
+    if(migrated) saveIdioms(v);
+  }
+  return v;
+}
+function saveIdioms(v){ localStorage.setItem(LS_IDIOMS, JSON.stringify(v)); }
+
+let idioms = loadIdioms();
+
+/* ---------- TAB SWITCHING ---------- */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab==='grammar') renderGrammar();
+    if(btn.dataset.tab==='flash') renderFlash();
+    if(btn.dataset.tab==='quiz') renderQuiz();
+    if(btn.dataset.tab==='reading') renderReading();
+    if(btn.dataset.tab==='idioms') renderIdioms();
+    if(btn.dataset.tab==='progress') renderProgress();
+    if(btn.dataset.tab==='manage') renderManage();
+  });
+});
+
+/* ---------- SPEECH: pronunciation playback ---------- */
+const LS_VOICE = 'el_voice';
+let cachedVoices = [];
+function loadVoices(){
+  cachedVoices = window.speechSynthesis.getVoices();
+  populateVoiceSelect();
+}
+if('speechSynthesis' in window){
+  loadVoices();
+  window.speechSynthesis.onvoiceschanged = loadVoices;
+}
+
+function englishVoices(){
+  // 只保留美式英文（en-US），排除英式/澳式等其他腔調
+  return cachedVoices.filter(v => v.lang === 'en-US');
+}
+
+function populateVoiceSelect(){
+  const sel = document.getElementById('voice-select');
+  if(!sel) return;
+  const list = englishVoices();
+  if(list.length === 0){
+    sel.innerHTML = `<option>找不到美式英文語音，請到系統設定安裝</option>`;
+    return;
+  }
+  const saved = localStorage.getItem(LS_VOICE);
+  sel.innerHTML = list.map(v => `<option value="${v.name}">${v.name}（${v.lang}）</option>`).join('');
+  if(saved && list.some(v=>v.name===saved)){
+    sel.value = saved;
+  } else {
+    const v = pickEnglishVoice();
+    if(v) sel.value = v.name;
+  }
+}
+
+function pickEnglishVoice(){
+  const saved = localStorage.getItem(LS_VOICE);
+  if(saved){
+    const v = cachedVoices.find(v => v.name === saved);
+    if(v) return v;
+  }
+  // 優先挑「加強版／進階版」的美式語音，音質最自然道地
+  const enhanced = cachedVoices.find(v => v.lang === 'en-US' && /Enhanced|Premium/i.test(v.name));
+  if(enhanced) return enhanced;
+  const preferredNames = ['Evan','Ava','Nathan','Samantha','Alex','Allison','Daniel','Karen','Moira','Google US English'];
+  for(const name of preferredNames){
+    const v = cachedVoices.find(v => v.name === name && v.lang === 'en-US');
+    if(v) return v;
+  }
+  const enUS = cachedVoices.find(v => v.lang === 'en-US');
+  if(enUS) return enUS;
+  const enAny = cachedVoices.find(v => v.lang && v.lang.startsWith('en'));
+  if(enAny) return enAny;
+  return null;
+}
+
+function speak(text){
+  if(!('speechSynthesis' in window)){
+    alert('你的瀏覽器不支援語音播放功能，建議改用 Chrome 或 Safari 最新版。');
+    return;
+  }
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US';
+  u.rate = 0.85;
+  const voice = pickEnglishVoice();
+  if(voice) u.voice = voice;
+  window.speechSynthesis.speak(u);
+}
+
+/* ---------- SPEECH: pronunciation check ---------- */
+const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+function checkPronunciation(targetWord, micBtnId, resultBoxId){
+  if(!SpeechRecognitionCtor){
+    alert('你的瀏覽器不支援發音偵測功能，建議改用電腦版 Chrome 瀏覽器來使用這個功能。');
+    return;
+  }
+  const micBtn = document.getElementById(micBtnId);
+  const resultBox = document.getElementById(resultBoxId);
+  if(micBtn.classList.contains('listening')) return; // 防止還在錄音時被連續點擊
+  const recognition = new SpeechRecognitionCtor();
+  recognition.lang = 'en-US';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 3;
+
+  micBtn.classList.add('listening');
+  resultBox.innerHTML = '';
+
+  recognition.onresult = (event)=>{
+    const alternatives = Array.from(event.results[0]).map(r=>r.transcript.trim().toLowerCase());
+    const target = targetWord.toLowerCase().trim();
+    const matched = alternatives.some(a => a === target || a.replace(/[.,!?]/g,'') === target);
+    resultBox.innerHTML = matched
+      ? `<div class="pron-result ok">✅ 發音正確！（辨識結果：${alternatives[0]}）</div>`
+      : `<div class="pron-result bad">🔁 再試一次！（辨識結果：${alternatives[0] || '（沒聽清楚）'}）</div>`;
+  };
+  recognition.onerror = ()=>{
+    resultBox.innerHTML = `<div class="pron-result bad">沒有偵測到聲音，請確認麥克風權限後再試一次</div>`;
+  };
+  recognition.onend = ()=>{
+    micBtn.classList.remove('listening');
+  };
+  recognition.start();
+}
+
+/* ---------- 通用單字卡牌組控制器（主單字庫 / 俗語支線共用） ---------- */
+function makeFlashDeck({ getData, saveData, areaId, prefix }){
+  let queue = [], idx = 0, flipped = false;
+
+  function render(){
+    const today = todayStr();
+    queue = getData().filter(w => w.nextReview <= today);
+    idx = 0;
+    flipped = false;
+    const area = document.getElementById(areaId);
+    if(queue.length === 0){
+      area.innerHTML = `<div class="card empty-msg">🎉 這裡今天要複習的都完成了！</div>`;
+      return;
+    }
+    draw();
+  }
+
+  function draw(){
+    const area = document.getElementById(areaId);
+    if(idx >= queue.length){
+      area.innerHTML = `<div class="card empty-msg">✅ 這一輪複習完成了！（共 ${queue.length} 張）</div>`;
+      return;
+    }
+    const w = queue[idx];
+    const P = prefix;
+    area.innerHTML = `
+      <div class="sub" style="display:flex;align-items:center;justify-content:center;gap:10px;">
+        <button class="icon-btn" id="${P}-prev-btn" title="上一張" style="width:28px;height:28px;font-size:0.85rem;${idx===0?'visibility:hidden;':''}">◀</button>
+        <span>進度：${idx+1} / ${queue.length}</span>
+      </div>
+      <div class="flashcard" id="${P}-fc">
+        ${w.image ?
+          `<img class="word-img" src="${w.image}" alt="${esc(w.en)}" onerror="this.outerHTML='<div class=word-emoji>${w.emoji||'🖼️'}</div>'">`
+          : (w.emoji ? `<div class="word-emoji">${w.emoji}</div>` : '')}
+        ${w.image && w.credit ? `<div class="credit">照片：${w.creditUrl ? `<a href="${esc(w.creditUrl)}" target="_blank" rel="noopener noreferrer" style="color:inherit;" onclick="event.stopPropagation()">${esc(w.credit)}</a>` : esc(w.credit)}（CC 授權）</div>` : ''}
+        <div class="term">${esc(w.en)}<button class="icon-btn" id="${P}-speak-btn" title="播放發音">🔊</button></div>
+        ${(w.syllables || w.ipa) ? `<div class="syllables">${[w.syllables, w.ipa].map(esc).filter(Boolean).join('　')}</div>` : ''}
+        ${flipped ? `
+          ${w.pos ? `<div class="pos-tag">${esc(w.pos)}</div>` : ''}
+          ${w.meanings.map((m,i)=>`
+            <div class="meaning">${w.meanings.length>1 ? (i+1)+'. ' : ''}${esc(m.zh)}</div>
+            ${m.example ? `<div class="example">${esc(m.example)}</div>` : ''}
+            ${m.exampleZh ? `<div class="example-zh">${esc(m.exampleZh)}</div>` : ''}
+          `).join('')}
+          ${w.phonicsNote ? `<div class="phonics-note">🔤 ${esc(w.phonicsNote)}</div>` : ''}
+        ` : `<div class="hint">點卡片查看中文意思</div>`}
+        ${flipped ? `
+          <button class="icon-btn" id="${P}-mic-btn" title="測試我的發音" style="margin-top:14px;">🎤</button>
+          <div id="${P}-pron-result-box"></div>
+        ` : ''}
+      </div>
+      ${flipped ? `
+        <div class="btn-row">
+          <button class="action btn-unknow" id="${P}-btn-unknow">😵 不熟</button>
+          <button class="action btn-know" id="${P}-btn-know">✅ 認識</button>
+        </div>
+      ` : ''}
+    `;
+    document.getElementById(`${P}-fc`).addEventListener('click', ()=>{
+      flipped = !flipped;
+      draw();
+    });
+    document.getElementById(`${P}-speak-btn`).addEventListener('click', (e)=>{
+      e.stopPropagation();
+      speak(w.en);
+    });
+    if(idx>0){
+      document.getElementById(`${P}-prev-btn`).addEventListener('click', (e)=>{
+        e.stopPropagation();
+        idx--;
+        flipped = false;
+        draw();
+      });
+    }
+    if(flipped){
+      document.getElementById(`${P}-mic-btn`).addEventListener('click', (e)=>{
+        e.stopPropagation();
+        checkPronunciation(w.en, `${P}-mic-btn`, `${P}-pron-result-box`);
+      });
+      document.getElementById(`${P}-btn-know`).addEventListener('click', (e)=>{ e.stopPropagation(); review(w, true); });
+      document.getElementById(`${P}-btn-unknow`).addEventListener('click', (e)=>{ e.stopPropagation(); review(w, false); });
+    }
+  }
+
+  function review(w, knew){
+    const today = todayStr();
+    if(knew){
+      w.box = Math.min(5, w.box+1);
+      w.nextReview = addDays(today, BOX_INTERVAL_DAYS[w.box]);
+    } else {
+      w.box = 1;
+      w.nextReview = today;
+      // 不熟的單字排到這一輪稍後的位置再考一次，當場加強記憶
+      const alreadyQueuedAgain = queue.slice(idx+1).includes(w);
+      if(!alreadyQueuedAgain){
+        const insertAt = Math.min(idx + 4, queue.length);
+        queue.splice(insertAt, 0, w);
+      }
+    }
+    saveData(getData());
+    markStudied();
+    idx++;
+    flipped = false;
+    draw();
+  }
+
+  return { render };
+}
+
+/* ---------- 通用小測驗控制器（主單字庫 / 俗語支線共用） ---------- */
+function makeQuizController({ getData, areaId, historyKey }){
+  let state = null;
+
+  function render(){
+    const area = document.getElementById(areaId);
+    const data = getData();
+    if(data.length < 4){
+      area.innerHTML = `<div class="empty-msg">項目至少要有 4 個才能出小測驗，先去新增一些吧！</div>`;
+      return;
+    }
+    state = { qIndex:0, correct:0, questions: build(data) };
+    draw();
+  }
+
+  function build(data){
+    const pool = [...data].sort(()=>Math.random()-0.5).slice(0, Math.min(10, data.length));
+    return pool.map(w=>{
+      const distractors = data.filter(x=>x.id!==w.id).sort(()=>Math.random()-0.5).slice(0,3).map(x=>primaryZh(x));
+      const answer = primaryZh(w);
+      const options = [...distractors, answer].sort(()=>Math.random()-0.5);
+      return { word:w, options, answer };
+    });
+  }
+
+  function draw(){
+    const area = document.getElementById(areaId);
+    if(state.qIndex >= state.questions.length){
+      const score = state.correct;
+      const total = state.questions.length;
+      if(historyKey){
+        const history = JSON.parse(localStorage.getItem(historyKey) || '[]');
+        history.unshift({date: todayStr(), score, total});
+        localStorage.setItem(historyKey, JSON.stringify(history.slice(0,50)));
+      }
+      markStudied();
+      area.innerHTML = `
+        <div class="empty-msg">
+          <div style="font-size:1.4rem;font-weight:700;color:var(--ink);">測驗完成！</div>
+          <div style="font-size:2rem;color:var(--accent);margin:10px 0;">${score} / ${total}</div>
+          <button class="action btn-primary" id="retry-${areaId}">再測一次</button>
+        </div>`;
+      document.getElementById(`retry-${areaId}`).addEventListener('click', render);
+      return;
+    }
+    const q = state.questions[state.qIndex];
+    area.innerHTML = `
+      <div class="sub">題目 ${state.qIndex+1} / ${state.questions.length}　・　目前得分 ${state.correct}</div>
+      <div class="quiz-q">${esc(q.word.en)} 的意思是？</div>
+      <div id="opts-${areaId}"></div>
+    `;
+    const optsEl = document.getElementById(`opts-${areaId}`);
+    q.options.forEach(opt=>{
+      const b = document.createElement('button');
+      b.className = 'quiz-opt';
+      b.textContent = opt;
+      b.addEventListener('click', ()=>{
+        document.querySelectorAll(`#opts-${areaId} .quiz-opt`).forEach(bb=>{
+          bb.disabled = true;
+          if(bb.textContent === q.answer) bb.classList.add('correct');
+          else if(bb.textContent === opt) bb.classList.add('wrong');
+        });
+        if(opt === q.answer) state.correct++;
+        setTimeout(()=>{ state.qIndex++; draw(); }, 700);
+      });
+      optsEl.appendChild(b);
+    });
+  }
+
+  return { render };
+}
+
+/* ---------- 主單字庫 / 俗語支線 各自的牌組與測驗 ---------- */
+const vocabDeck = makeFlashDeck({ getData:()=>vocab, saveData:saveVocab, areaId:'flash-area', prefix:'v' });
+const vocabQuiz = makeQuizController({ getData:()=>vocab, areaId:'quiz-area', historyKey:LS_QUIZ });
+
+const idiomDeck = makeFlashDeck({ getData:()=>idioms, saveData:saveIdioms, areaId:'idiom-flash-area', prefix:'idm' });
+const idiomQuiz = makeQuizController({ getData:()=>idioms, areaId:'idiom-quiz-area', historyKey:LS_IDIOM_QUIZ });
+
+function renderFlash(){ vocabDeck.render(); }
+function renderQuiz(){ vocabQuiz.render(); }
+
+function renderIdioms(){
+  const isFlash = document.querySelector('.idiom-subtab.active').dataset.idiomTab === 'flash';
+  if(isFlash) idiomDeck.render(); else idiomQuiz.render();
+}
+
+document.querySelectorAll('.idiom-subtab').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.idiom-subtab').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const isFlash = btn.dataset.idiomTab === 'flash';
+    document.getElementById('idiom-flash-area').style.display = isFlash ? '' : 'none';
+    document.getElementById('idiom-quiz-area').style.display = isFlash ? 'none' : '';
+    renderIdioms();
+  });
+});
+
+/* ---------- GRAMMAR LOGIC（書本式，預設首頁） ---------- */
+const LS_GRAMMAR = 'el_grammar';
+
+const GRAMMAR = [
+  { id:'g1', title:'為什麼英文的語序這麼重要？',
+    paras:[
+      "中文因為語氣和上下文很清楚，語序可以很彈性，例如「這本書我看過」也通順。但英文幾乎沒有格位變化（除了 I/me、he/him 這類代名詞），所以<b>誰在動作前面、誰在後面</b>，就變成判斷「誰是主詞、誰是受詞」的唯一方法。",
+      "基本公式：<b>主詞 + 動詞 + 受詞（S-V-O）</b>。<em>\"Dog bites man.\"</em> 跟 <em>\"Man bites dog.\"</em> 意思完全相反，差別只在順序。",
+      "中文可以把受詞提到句首強調，英文幾乎不行——一定要說 <em>\"I have read this book.\"</em> 而不能直接把 book 放到最前面。",
+      "記住：英文的語序不只是文法規定，它是英文用來表達「誰對誰做了什麼」的<b>唯一工具</b>，順序錯了，意思就整個變了。"
+    ],
+    quiz:[
+      { q:'哪一句話的意思是「人咬狗」？', options:['Man bites dog.','Dog bites man.'], answer:0 },
+      { q:'英文為什麼不能像中文一樣把受詞提到句首強調？', options:['因為英文語序是判斷主詞受詞的主要依據','因為英文文法比較嚴格','因為英文沒有受詞'], answer:0 }
+    ] },
+  { id:'g2', title:'時態不是 12 條規則，是「時間」加「完成度」的組合',
+    paras:[
+      "很多人把英文 12 時態當成 12 條要死背的規則，其實它只是兩個維度交叉出來的結果：",
+      "維度一：<b>時間</b>（現在／過去／未來）。維度二：<b>動作的完成度</b>（簡單／進行／完成／完成進行）。",
+      "把這兩個維度交叉，就會得到 12 種時態。不用死背，只要問自己兩個問題：這件事發生在什麼時間？它現在是「還在做」、「已經做完」，還是「單純敘述一個事實」？",
+      "例如 <em>\"I have lived here for five years.\"</em>（現在完成式）＝ 過去開始、持續到現在、還沒結束。而 <em>\"I lived here for five years.\"</em>（過去簡單式）＝ 過去發生，現在已經結束了。",
+      "差別不在文法規則本身，而在<b>「這件事跟『現在』有沒有關係」</b>——這才是時態真正在表達的邏輯。"
+    ],
+    quiz:[
+      { q:'"I have lived here for five years." 這句話暗示什麼？', options:['我已經搬走了','這件事持續到現在，還沒結束','這件事發生在過去某個瞬間'], answer:1 },
+      { q:'決定要用哪個時態時，最關鍵的問題是？', options:['這個動詞是規則還是不規則動詞','這件事跟「現在」有沒有關係','句子有幾個字'], answer:1 }
+    ] },
+  { id:'g3', title:'冠詞 a / an / the：說話者和聽者「有沒有共同知道是哪一個」',
+    paras:[
+      "中文沒有冠詞，這是台灣學生最容易出錯的地方。其實邏輯很簡單：",
+      "<b>a / an</b>：這是「某一個，但聽者不知道是哪一個」的東西。例如 <em>\"I saw a dog.\"</em>（聽者不知道是哪隻狗）。",
+      "<b>the</b>：說話者和聽者<b>都知道</b>「就是那一個」。例如 <em>\"I saw the dog.\"</em>（指特定、雙方都知道的那隻狗）。",
+      "常見規則：東西第一次提到通常用 a，之後再提到同一個東西就變成 the，因為現在雙方都「知道是哪一個」了。<em>\"I bought a book. The book was expensive.\"</em>——第一次是 a book（不確定哪本），第二次變 the book（雙方都知道是同一本了）。"
+    ],
+    quiz:[
+      { q:'"I bought a book. ___ book was expensive." 空格該填？', options:['A','The','An'], answer:1 },
+      { q:'什麼時候該用 a/an 而不是 the？', options:['說話者和聽者都知道是哪一個','聽者不知道是哪一個特定對象','這個東西只有一個'], answer:1 }
+    ] },
+  { id:'g4', title:'可數與不可數名詞：能不能「一個一個數」決定要不要加 s',
+    paras:[
+      "邏輯很直覺：如果這個東西可以清楚分成一個一個的單位，就是<b>可數名詞</b>（可以加 s，可以用 a/an）；如果它是連續的、無法自然分割的物質或概念，就是<b>不可數名詞</b>（不能加 s，不能用 a/an，只能用 some/much）。",
+      "可數：apple, book, idea（一個蘋果、一本書、一個想法，都能一個一個數）。",
+      "不可數：water, information, advice（水沒辦法說「一個水」，除非用容器，例如 <em>\"a glass of water\"</em>）。",
+      "這也是為什麼 <em>\"informations\"</em> 是錯的——information 是不可數的抽象概念，本質上無法切成一個一個的單位，所以不能加 s。"
+    ],
+    quiz:[
+      { q:'下列哪一個是不可數名詞？', options:['apple','information','idea'], answer:1 },
+      { q:'為什麼 "informations" 是錯的？', options:['information 是不可數名詞，無法切成一個一個的單位','information 太長了不能加 s','這是英式和美式的差異'], answer:0 }
+    ] },
+  { id:'g5', title:'介系詞 in / on / at：從「大範圍」到「精確點」的空間邏輯',
+    paras:[
+      "這三個字看似要死背，其實有一致的空間邏輯，從大範圍到精確點：",
+      "<b>in</b>：在一個「範圍／容器」裡面。例如 <em>in a room, in July, in 2024</em>（月份、年份都是比較大範圍的時間容器）。",
+      "<b>on</b>：在一個「表面」上。例如 <em>on the table, on Monday</em>（星期幾就像時間軸上的一個「面」）。",
+      "<b>at</b>：在一個「精確的點」。例如 <em>at the door, at 3 o'clock</em>（明確的地點或時間點）。",
+      "時間也是同樣邏輯：in 用在大範圍時間（in 2024、in the morning），on 用在特定的一天（on Monday），at 用在精確時刻（at 3pm）——範圍越小、越精確，字就越換越「小」。"
+    ],
+    quiz:[
+      { q:'"I will see you ___ Monday." 空格該填？', options:['in','on','at'], answer:1 },
+      { q:'in/on/at 從大範圍到精確點的順序是？', options:['at → on → in','in → on → at','on → in → at'], answer:1 }
+    ] },
+  { id:'g6', title:'為什麼問句要加 do / does / did？',
+    paras:[
+      "英文的直述句沒有明顯的「疑問標記」（不像中文可以直接在句尾加「嗎」），所以英文需要把<b>助動詞搬到句首</b>來表示這是問句。",
+      "但一般動詞的句子本身沒有助動詞可以搬，所以英文發明了 <b>do/does/did</b> 專門負責「站在句首表示疑問」，它本身沒有實際意思，只是語法工具。",
+      "<em>\"You like coffee.\"</em> → <em>\"Do you like coffee?\"</em>（用 do 代替搬動 like）。",
+      "如果句子本身已經有助動詞（is/are/can/have...），就<b>不需要</b> do，直接把它搬到前面就好：<em>\"You are tired.\"</em> → <em>\"Are you tired?\"</em>。",
+      "邏輯：do/does/did 是「借來的助動詞」，專門在句子沒有其他助動詞可用時，負責搬到句首表達疑問，或加 not 表達否定。"
+    ],
+    quiz:[
+      { q:'"You like coffee." 改成問句？', options:['Like you coffee?','Do you like coffee?','You like coffee?'], answer:1 },
+      { q:'為什麼 "Are you tired?" 不需要加 do？', options:['因為 tired 不是動詞','因為句子本身已經有助動詞 are，可以直接搬到句首','因為這是特殊規則，沒有邏輯'], answer:1 }
+    ] },
+  { id:'g7', title:'被動語態：當你想強調「發生的事」而不是「誰做的」',
+    paras:[
+      "<b>主動語態</b>：焦點在「誰做了這件事」。例如 <em>\"The chef cooked the meal.\"</em>",
+      "<b>被動語態</b>：焦點在「這件事發生了／這個東西怎麼了」，做的人不重要或不知道是誰。例如 <em>\"The meal was cooked.\"</em>",
+      "公式：<b>be 動詞 + 過去分詞(p.p.)</b>，做的人如果要提，用 by 加在句尾。",
+      "什麼時候用被動：① 不知道或不重要是誰做的，例如 <em>\"My phone was stolen.\"</em>（誰偷的不知道）。② 想強調事情本身而不是行為者，新聞、報告常用，例如 <em>\"The bridge was built in 1990.\"</em>"
+    ],
+    quiz:[
+      { q:'"My phone was stolen." 為什麼用被動？', options:['想強調手機本身，做的人不知道是誰','主動語態文法有錯','過去式一定要用被動'], answer:0 },
+      { q:'被動語態的公式是？', options:['have + 過去分詞','be 動詞 + 過去分詞','will + 原形動詞'], answer:1 }
+    ] },
+  { id:'g8', title:'連接詞 because / although / if：句子之間的邏輯關係',
+    paras:[
+      "連接詞的功能是告訴讀者「這兩個句子之間是什麼邏輯關係」，選對連接詞比選對單字更重要，因為它決定了整句話的邏輯走向。",
+      "<b>because</b>：因果關係，前面是原因。<em>\"I stayed home because I was sick.\"</em>",
+      "<b>although</b>：轉折關係，兩件事看似矛盾但都成立。<em>\"Although it rained, we went out.\"</em>",
+      "<b>if</b>：條件關係，前面成立，後面才會發生。<em>\"If it rains, I will stay home.\"</em>",
+      "這些連接詞就是在標示「兩件事之間的關聯」——先想清楚兩句話的邏輯關係，再挑對應的連接詞，會比單純背單字有效得多。"
+    ],
+    quiz:[
+      { q:'"___ it rained, we went out." 空格該填？', options:['Because','Although','If'], answer:1 },
+      { q:'because 和 although 的差別是？', options:['because 是因果關係，although 是轉折關係','兩個意思一樣可以互換','because 用在過去式，although 用在現在式'], answer:0 }
+    ] },
+  { id:'g9', title:'情態動詞 can/could/may/might/must/should：不是能力，是「說話者對可能性的判斷」',
+    paras:[
+      "情態動詞的共同邏輯：它們都是在幫<b>說話者</b>表達對這件事的態度或判斷，而不只是描述客觀事實。",
+      "<b>can / could</b>：能力或可能性。can 表示現在做得到；could 除了當過去式，也常用來表示「比較委婉、比較不確定」的可能性。<em>\"It can be difficult.\"</em> 比 <em>\"It could be difficult.\"</em> 語氣更肯定，could 語氣更保留、更禮貌。",
+      "<b>may / might</b>：可能性，但比 can/could 更偏「不確定、有機會發生」。might 的不確定感又比 may 更強一點。<em>\"It may rain.\" / \"It might rain.\"</em>",
+      "<b>must</b>：說話者非常確定的推論，或強烈的義務。<em>\"You must be tired.\"</em>（推論：我很確定你一定很累）/ <em>\"You must finish this today.\"</em>（義務：一定要完成）。",
+      "<b>should</b>：不是「一定」，而是說話者認為<b>合理、期待會發生</b>的建議或推測。<em>\"You should see a doctor.\"</em>",
+      "邏輯總結：情態動詞的強弱排列，其實是在表達「說話者有多確定」——must > should > may/might > could，選對情態動詞比選對時態更能傳達你真正的語氣。"
+    ],
+    quiz:[
+      { q:'"You must be tired." 這裡 must 表達的是？', options:['義務、一定要做','說話者很確定的推論','允許'], answer:1 },
+      { q:'情態動詞確定程度由高到低排列，下列何者正確？', options:['could > may > must','must > should > might','should > must > can'], answer:1 }
+    ] },
+  { id:'g10', title:'動名詞 (V-ing) 與不定詞 (to V)：動詞後面接哪一種，邏輯是什麼',
+    paras:[
+      "中文沒有這種區別，這是台灣學生常犯錯的地方：<em>\"I enjoy swimming.\"</em>（對）vs <em>\"I enjoy to swim.\"</em>（錯）。",
+      "邏輯：動名詞 (V-ing) 常表示「已經在做的事、習慣性的活動」，比較像一個「名詞化的動作」；不定詞 (to V) 常表示「尚未發生、指向未來要達成的目標」。",
+      "enjoy, finish, avoid, suggest 後面接 V-ing：因為這些動詞談的是「正在做／已經做／持續做」的事。<em>\"I finished reading the book.\"</em>",
+      "want, plan, decide, hope 後面接 to V：因為這些動詞談的是「還沒發生、指向未來」的意圖。<em>\"I want to travel next year.\"</em>",
+      "有些動詞兩者都可以接，但意思會變：<em>\"I stopped smoking.\"</em>（我戒菸了，停止「抽菸」這個動作）vs <em>\"I stopped to smoke.\"</em>（我停下來，為了要去抽菸）——stop + V-ing 是停止正在做的事，stop + to V 是停下來去做另一件事，正好呼應了上面的邏輯：V-ing 是「正在做的事」，to V 是「要去做的目的」。"
+    ],
+    quiz:[
+      { q:'"I enjoy ___." (游泳) 空格該填？', options:['to swim','swimming','swim'], answer:1 },
+      { q:'"I stopped ___ smoke." 意思是「我停下來去抽菸」，空格該填？', options:['smoking','to smoke','smoke'], answer:1 }
+    ] },
+  { id:'g11', title:'比較級與最高級：不只是加 er/est，是在表達「差距」',
+    paras:[
+      "比較級 (er/more) 是在<b>兩者之間</b>畫出差距：<em>\"She is taller than me.\"</em>",
+      "最高級 (est/most) 是把某個對象放進一整個群體中比較，強調「在所有裡面最...」：<em>\"She is the tallest in her class.\"</em>——注意最高級前面幾乎一定要加 the，因為它指的是「群體中唯一的那一個」，邏輯上跟冠詞 the 的「雙方都知道是哪一個」是一致的。",
+      "短單字（通常一兩個音節）用 -er/-est：tall → taller → tallest。長單字（通常三個音節以上）改用 more/most：beautiful → more beautiful → most beautiful。背後的邏輯是「發音方便」——短字加字尾好唸，長字加字尾會太拗口，所以改用 more/most 代替。",
+      "可以用「差距的程度」修飾比較級：<em>\"She is much taller than me.\" / \"She is a little taller than me.\"</em>——much/a little 在告訴你差距有多大，這是最高級做不到的（因為最高級沒有「跟誰比」的對象，只有「在群體裡排第一」）。"
+    ],
+    quiz:[
+      { q:'"She is ___ in her class." (最高級) 空格該填？', options:['taller','the tallest','more tall'], answer:1 },
+      { q:'為什麼最高級前面幾乎一定要加 the？', options:['文法規定，沒有原因','因為它指的是群體中唯一的那一個，邏輯上跟冠詞 the 一致','因為最高級都是長單字'], answer:1 }
+    ] },
+  { id:'g12', title:'主詞動詞一致：單複數呼應的邏輯陷阱',
+    paras:[
+      "基本邏輯：單數主詞配單數動詞（動詞加 s），複數主詞配原形動詞。聽起來簡單，但英文有幾個邏輯陷阱：",
+      "<b>看起來複數，其實是單數</b>：news, mathematics, economics 這類字尾雖然有 s，但指的是「一個學科／一個整體概念」，要配單數動詞：<em>\"The news is good.\"</em>",
+      "<b>集合名詞</b>：team, family, government 可以視為「一個整體」（單數）或「裡面的每個成員」（複數），依語意決定：<em>\"The team is strong.\"</em>（整體）/ <em>\"The team are arguing among themselves.\"</em>（裡面每個人各自在吵）——英式英文比美式更常把集合名詞當複數用。",
+      "<b>被介系詞片語隔開的主詞</b>：真正決定動詞單複數的是主詞本身，不是離動詞最近的那個字。<em>\"The list of items is long.\"</em>——主詞是 list（單數），不是 items（複數），items 只是修飾 list 的介系詞片語，很多人會被離動詞最近的 items 誤導。",
+      "邏輯總結：判斷單複數呼應時，永遠先問「真正的主詞是誰」，再決定動詞形式，不要被中間的修飾語干擾。"
+    ],
+    quiz:[
+      { q:'"The list of items ___ long." 空格該填？', options:['are','is','were'], answer:1 },
+      { q:'"The news ___ good." 空格該填？', options:['are','is','were'], answer:1 }
+    ] },
+  { id:'g13', title:'關係代名詞 who / which / that：把兩句話「黏」在一起的邏輯',
+    paras:[
+      "英文喜歡把兩個有共同對象的句子合併成一句更精簡的話，而不是像中文一樣拆成兩句分開講，這就是關係代名詞存在的原因。",
+      "例如：<em>\"I have a friend. She lives in Tokyo.\"</em> 可以合併成 <em>\"I have a friend who lives in Tokyo.\"</em>——who 代替了第二句裡的 she，同時把兩句「黏」成一句，並指向前面的 friend。",
+      "<b>who</b>：代替「人」。<b>which</b>：代替「事物」。<b>that</b>：人和事物都可以用，較口語，常用在限定性子句中。",
+      "這個邏輯的核心是：關係代名詞同時扮演兩個角色——它是<b>連接詞</b>（把兩句合併），也是<b>代名詞</b>（代替前面提過的名詞，避免重複）。",
+      "<em>\"The book that I bought yesterday is great.\"</em>——that 代替 book，同時把「我昨天買了這本書」這句話變成修飾 book 的子句，插入到主要句子裡。"
+    ],
+    quiz:[
+      { q:'"I have a friend ___ lives in Tokyo." 空格該填？', options:['which','who','whom'], answer:1 },
+      { q:'關係代名詞同時扮演哪兩個角色？', options:['動詞和受詞','連接詞和代名詞','主詞和受詞'], answer:1 }
+    ] },
+  { id:'g14', title:'條件句：三種 if 的邏輯差異',
+    paras:[
+      "條件句的核心邏輯是「這件事有多可能發生」，不同的可能性用不同的時態組合表達，這不是隨機規定，而是時態在暗示「真實程度」。",
+      "<b>第一條件句（真實／可能）</b>：if + 現在式，主要子句 + will。<em>\"If it rains, I will stay home.\"</em>——這件事有實際可能發生，用現在式表達「合理、可能」的事。",
+      "<b>第二條件句（假設／不太可能或違反現況）</b>：if + 過去式，主要子句 + would。<em>\"If I were rich, I would travel the world.\"</em>——用「過去式」不是在講過去，而是刻意用時態的距離感表達「這跟現實有距離、只是假設」。",
+      "<b>第三條件句（與過去事實相反）</b>：if + had + p.p.，主要子句 + would have + p.p.。<em>\"If I had studied harder, I would have passed the exam.\"</em>——描述一個已經無法改變的過去，帶著遺憾的語氣。",
+      "邏輯總結：時態離「現在／事實」越遠（過去式、過去完成式），代表這件事離「真實發生」也越遠——英文用時態的距離感，表達可能性的距離感。"
+    ],
+    quiz:[
+      { q:'"If I ___ rich, I would travel the world." 空格該填？', options:['am','were','will be'], answer:1 },
+      { q:'條件句的時態離現在越遠，代表？', options:['這件事離真實發生的可能性也越遠','這件事一定會發生','沒有特別意義'], answer:0 }
+    ] },
+  { id:'g15', title:'間接引語：轉述別人的話，時態為什麼要「往前推」',
+    paras:[
+      "當你轉述別人說過的話時，因為敘述的當下已經是「事後」，所以英文習慣把時態往前推一格，這叫做「時態呼應」(backshift)。",
+      "直接引語：<em>He said, \"I am tired.\"</em> → 間接引語：<em>He said (that) he was tired.</em>——現在式 am 往前推成過去式 was。",
+      "邏輯：因為你現在轉述的時候，他說話那件事已經是過去了，所以用來描述「他當時狀態」的動詞，也要跟著往過去推一格，才符合「這是過去發生的事」的邏輯，不是隨便硬性規定。",
+      "常見推移對照：現在式 → 過去式；過去式 → 過去完成式；will → would；can → could。",
+      "如果轉述的內容是「永遠成立的事實」，時態可以不推移：<em>He said (that) the earth is round.</em>——因為地球是圓的不會因為「轉述」而改變，邏輯上不需要往過去推。"
+    ],
+    quiz:[
+      { q:'直接引語 He said, "I am tired." 轉成間接引語？', options:['He said he is tired.','He said he was tired.','He said he tired.'], answer:1 },
+      { q:'為什麼轉述別人的話時態要往前推？', options:['因為轉述當下，那件事已經是過去發生的了','這是沒有原因的規定','只有正式英文才需要'], answer:0 }
+    ] },
+  { id:'g16', title:'使役動詞 make / let / have：誰做動作，決定後面動詞的形式',
+    paras:[
+      "使役動詞的邏輯是「主詞讓某人做某件事」，根據「誰真正主動、誰被動接受」的程度不同，後面動詞的形式也不同。",
+      "<b>make</b>：強迫、沒有選擇餘地。後面接原形動詞。<em>\"My mom made me clean my room.\"</em>（我沒得選，被強迫打掃）",
+      "<b>let</b>：允許、給予許可。後面接原形動詞。<em>\"My mom let me go out.\"</em>（她同意讓我出去，我本身是想做的）",
+      "<b>have</b>：安排、指使（通常對象是有責任要做的人，例如員工）。後面接原形動詞。<em>\"I had the mechanic fix my car.\"</em>（我請技師修車，這是他的工作）",
+      "<b>get</b>：跟 have 意思接近，但強調「說服」對方去做，後面要接 to V（跟前三個不一樣）。<em>\"I got him to help me.\"</em>（我說服他來幫我）",
+      "邏輯總結：make/let/have 都用原形動詞，因為它們表達的是「一個動作直接促成另一個動作發生」，中間不需要 to 這個「指向未來目標」的標記；get 因為帶有「說服的過程」，所以保留了 to，暗示這是需要努力才達成的目標。"
+    ],
+    quiz:[
+      { q:'"My mom ___ me clean my room." (強迫) 空格該填？', options:['let','made','got'], answer:1 },
+      { q:'為什麼 make/let/have 後面接原形動詞，而 get 要接 to V？', options:['隨機規定，沒有邏輯','make/let/have 表示直接促成動作，get 帶有「說服」的過程','get 是不規則動詞'], answer:1 }
+    ] },
+  { id:'g17', title:'分詞當形容詞：-ing 與 -ed 的邏輯差異（interesting vs interested）',
+    paras:[
+      "這是台灣學生極常搞混的地方，其實邏輯很清楚：<b>誰是那個「造成感覺」的？誰是那個「感受到」的？</b>",
+      "<b>-ing</b>：主動、造成某種感覺的一方。<em>\"This movie is interesting.\"</em>——電影本身讓人覺得有趣，電影是「造成」有趣感覺的來源。",
+      "<b>-ed</b>：被動、感受到某種感覺的一方。<em>\"I am interested in this movie.\"</em>——我是「感受到」有趣的那個人。",
+      "同樣邏輯適用在所有情緒動詞：bore → boring（讓人無聊的）/ bored（感到無聊的人）；excite → exciting（令人興奮的）/ excited（感到興奮的人）；confuse → confusing（令人困惑的）/ confused（感到困惑的人）。",
+      "判斷技巧：如果主詞是「造成感覺的東西/人」，用 -ing；如果主詞是「感受到這個感覺的人」，用 -ed。"
+    ],
+    quiz:[
+      { q:'"This movie is ___." (電影本身讓人覺得有趣) 空格該填？', options:['interested','interesting','interest'], answer:1 },
+      { q:'-ing 和 -ed 的差別邏輯是？', options:['-ing 是造成感覺的一方，-ed 是感受到的一方','-ing 用在過去，-ed 用在現在','沒有差別，可以互換'], answer:0 }
+    ] },
+  { id:'g18', title:'片語動詞的邏輯：動詞加介副詞，為什麼會變出全新的意思',
+    paras:[
+      "片語動詞 (phrasal verb) 是「動詞 + 介副詞」組成的固定搭配，意思常常沒辦法從個別單字直接猜出來，因為介副詞在這裡不是表達字面上的方向，而是加上一層「比喻」的意義。",
+      "例如 <b>give up</b>（放棄）：give（給）+ up（往上）看起來沒有關聯，但可以想像成「把手舉高投降」的畫面，up 在這裡暗示「舉起、交出」的動作方向，延伸成「放棄」的意思。",
+      "<b>look up</b>（查詢）：look（看）+ up（往上）——想像抬頭去看高處的資料架或字典，引申為「查找資訊」。",
+      "常見介副詞的比喻邏輯：<b>up</b> 常表示「完成、增加、出現」（finish up, speed up, show up）；<b>down</b> 常表示「減少、停止、記錄」（slow down, break down, write down）；<b>out</b> 常表示「向外、消失、弄清楚」（find out, run out, figure out）；<b>off</b> 常表示「分離、停止」（turn off, take off）。",
+      "邏輯總結：片語動詞不是隨機組合，介副詞背後都有一個空間畫面被「延伸」成抽象意思，理解這個畫面感，比死背中文翻譯更容易記住。"
+    ],
+    quiz:[
+      { q:'"give up" 的意思是？', options:['舉起','放棄','起床'], answer:1 },
+      { q:'片語動詞裡的介副詞通常代表什麼？', options:['純粹隨機組合，沒有邏輯','一個延伸自空間畫面的比喻意義','只是裝飾用的字，可有可無'], answer:1 }
+    ] },
+  { id:'g19', title:'There is / There are：先講「有沒有」，再講「是什麼」',
+    paras:[
+      "中文習慣先講主角再講狀態（「桌上有一本書」＝先講桌子，再講有書），但英文的 there is/are 句型是先宣告「存在」這件事，再補充細節，語序邏輯剛好相反。",
+      "<em>\"There is a book on the table.\"</em>——there is 先告訴聽者「有東西存在」，book 才是真正的主詞（決定用 is 還是 are 的依據），on the table 補充地點。",
+      "為什麼叫「先講有沒有」：因為當你要跟別人介紹一個「對方還不知道」的新東西時，英文習慣先用 there is/are 起頭，把新資訊「請出場」，這跟冠詞邏輯（a = 聽者不知道的東西）是一致的——there is/are 後面幾乎都接 a/an 或數字，很少接 the。",
+      "單複數依「真正的主詞」決定：<em>\"There is a cat in the garden.\" / \"There are three cats in the garden.\"</em>——cat 是單數用 is，cats 是複數用 are，there 本身不影響動詞形式。"
+    ],
+    quiz:[
+      { q:'"There ___ three cats in the garden." 空格該填？', options:['is','are','be'], answer:1 },
+      { q:'There is/are 句型的邏輯順序是？', options:['先講是什麼，再講有沒有','先宣告存在，再補充細節','沒有固定順序'], answer:1 }
+    ] },
+  { id:'g20', title:'構詞邏輯：字首字尾如何幫你「秒懂」生字',
+    paras:[
+      "英文有大量單字是由「字根 + 字首 + 字尾」組合而成，學會拆解，看到不認識的字也能猜出七八成意思，這比死背單字表有效率得多。",
+      "<b>常見字首（改變意思）</b>：un-/in-/dis-（表示「不」，例如 unhappy 不快樂、impossible 不可能、disagree 不同意）；re-（表示「再次」，例如 rewrite 重寫、review 重新看＝複習）；pre-（表示「之前」，例如 preview 預覽）。",
+      "<b>常見字尾（改變詞性）</b>：-tion/-sion（動詞變名詞，例如 decide → decision）；-able/-ible（形容詞，表示「可以被...的」，例如 comfort → comfortable 可以感到舒適的）；-ful（形容詞，表示「充滿...的」，例如 care → careful 充滿小心的＝小心的）；-less（形容詞，表示「沒有...的」，跟 -ful 相反，例如 care → careless 沒有小心的＝粗心的）。",
+      "邏輯示範：看到 <em>uncomfortable</em> 這個生字，拆解成 un(不) + comfort(舒適，字根) + able(可以被...的) ＝「不能讓人感到舒適的」＝不舒服的。不用查字典，靠拆字首字尾就能推理出意思。",
+      "這個技巧在閱讀時特別有用：遇到生字先別急著查，試著拆解字首字尾，通常就能猜出大概方向。"
+    ],
+    quiz:[
+      { q:'"uncomfortable" 拆解後的意思是？', options:['可以感到舒適的','不能讓人感到舒適的','非常舒適的'], answer:1 },
+      { q:'字尾 "-less" 通常表示？', options:['充滿...的','沒有...的','可以被...的'], answer:1 }
+    ] }
+];
+
+function loadGrammarProgress(){ return JSON.parse(localStorage.getItem(LS_GRAMMAR) || '{}'); }
+function saveGrammarProgress(p){ localStorage.setItem(LS_GRAMMAR, JSON.stringify(p)); }
+
+let currentGrammarId = null;
+
+function renderGrammar(){
+  if(currentGrammarId) renderGrammarDetail();
+  else renderGrammarList();
+}
+
+function renderGrammarList(){
+  const progress = loadGrammarProgress();
+  const readCount = GRAMMAR.filter(c=>progress[c.id]).length;
+  const quizDoneCount = GRAMMAR.filter(c=>progress[c.id] && typeof progress[c.id]==='object' && progress[c.id].quizScore!==undefined).length;
+  const area = document.getElementById('grammar-area');
+  area.innerHTML = `
+    <div class="card" style="text-align:center;">
+      <div style="font-size:0.78rem;color:var(--ink-soft);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;">English Logic</div>
+      <div style="font-family:var(--serif);font-size:1.9rem;font-weight:600;letter-spacing:-0.01em;margin:0 0 8px;">英文的邏輯概念</div>
+      <div class="sub" style="margin:0;">不是死背規則，是理解「為什麼英文這樣運作」・已讀 ${readCount} / ${GRAMMAR.length} 章・已測驗 ${quizDoneCount} 章</div>
+    </div>
+    ${GRAMMAR.map((c,i)=>{
+      const p = progress[c.id];
+      let badge = '';
+      if(p){
+        const hasQuiz = typeof p === 'object' && p.quizScore !== undefined;
+        badge = hasQuiz
+          ? `<span class="pos-tag" style="white-space:nowrap;">已讀・測驗 ${p.quizScore}/${p.quizTotal}</span>`
+          : `<span class="pos-tag" style="white-space:nowrap;">已讀</span>`;
+      }
+      return `
+        <div class="card reading-card" data-open="${c.id}" style="display:flex;align-items:center;gap:16px;">
+          <div style="font-family:var(--serif);font-size:1.6rem;color:var(--accent);font-weight:700;width:38px;flex-shrink:0;text-align:center;">${i+1}</div>
+          <div style="flex:1;">
+            <h3 style="margin:0;font-size:1.05rem;">${c.title}</h3>
+          </div>
+          ${badge}
+        </div>
+      `;
+    }).join('')}
+  `;
+  area.querySelectorAll('[data-open]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      currentGrammarId = el.dataset.open;
+      renderGrammar();
+    });
+  });
+}
+
+function markGrammarRead(cid){
+  const progress = loadGrammarProgress();
+  let entry = progress[cid];
+  if(!entry || entry === true) entry = {};
+  entry.read = true;
+  progress[cid] = entry;
+  saveGrammarProgress(progress);
+}
+
+function renderGrammarDetail(){
+  const idx = GRAMMAR.findIndex(c=>c.id===currentGrammarId);
+  const c = GRAMMAR[idx];
+  markGrammarRead(c.id);
+  markStudied();
+
+  const area = document.getElementById('grammar-area');
+  area.innerHTML = `
+    <button class="action btn-ghost" id="grammar-back-btn" style="margin-bottom:14px;">← 返回目錄</button>
+    <div class="card">
+      <div style="font-size:0.78rem;color:var(--ink-soft);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;">Chapter ${idx+1} / ${GRAMMAR.length}</div>
+      <h3 style="font-size:1.4rem;margin-bottom:16px;">${c.title}</h3>
+      <div class="reading-text">
+        ${c.paras.map(p=>`<p style="margin:0 0 16px;">${p}</p>`).join('')}
+      </div>
+    </div>
+    ${c.quiz && c.quiz.length ? `
+      <div class="card">
+        <h3>本章小測驗・加深印象</h3>
+        <div class="sub" style="margin-bottom:12px;">讀完馬上考，比只看不練更容易記住</div>
+        <div id="grammar-questions"></div>
+        <button class="action btn-primary" id="grammar-quiz-submit-btn">提交答案</button>
+      </div>
+    ` : ''}
+    <div class="btn-row" style="justify-content:space-between;">
+      <button class="action btn-ghost" id="grammar-prev-btn" ${idx===0?'style="visibility:hidden;"':''}>← 上一章</button>
+      <button class="action btn-primary" id="grammar-next-btn" ${idx===GRAMMAR.length-1?'style="visibility:hidden;"':''}>下一章 →</button>
+    </div>
+  `;
+  document.getElementById('grammar-back-btn').addEventListener('click', ()=>{
+    currentGrammarId = null;
+    renderGrammar();
+  });
+  if(idx>0){
+    document.getElementById('grammar-prev-btn').addEventListener('click', ()=>{
+      currentGrammarId = GRAMMAR[idx-1].id;
+      renderGrammar();
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+  }
+  if(idx<GRAMMAR.length-1){
+    document.getElementById('grammar-next-btn').addEventListener('click', ()=>{
+      currentGrammarId = GRAMMAR[idx+1].id;
+      renderGrammar();
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+  }
+  if(c.quiz && c.quiz.length){
+    const qEl = document.getElementById('grammar-questions');
+    c.quiz.forEach((q, qi)=>{
+      const block = document.createElement('div');
+      block.className = 'q-block';
+      block.innerHTML = `<div class="q-title">${qi+1}. ${q.q}</div>` +
+        q.options.map((opt,oi)=>`
+          <label class="q-opt" data-qi="${qi}" data-oi="${oi}">
+            <input type="radio" name="gq${qi}" value="${oi}">${opt}
+          </label>
+        `).join('');
+      qEl.appendChild(block);
+    });
+    document.getElementById('grammar-quiz-submit-btn').addEventListener('click', ()=> submitGrammarQuiz(c));
+  }
+}
+
+function submitGrammarQuiz(c){
+  let score = 0;
+  c.quiz.forEach((q, qi)=>{
+    const checked = document.querySelector(`input[name="gq${qi}"]:checked`);
+    const sel = checked ? parseInt(checked.value) : -1;
+    if(sel === q.answer) score++;
+    document.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(label=>{
+      const oi = parseInt(label.dataset.oi);
+      label.querySelector('input').disabled = true;
+      if(oi === q.answer) label.classList.add('opt-correct');
+      else if(oi === sel) label.classList.add('opt-wrong');
+    });
+  });
+
+  const progress = loadGrammarProgress();
+  let entry = progress[c.id];
+  if(!entry || entry === true) entry = {};
+  entry.read = true;
+  entry.quizScore = score;
+  entry.quizTotal = c.quiz.length;
+  progress[c.id] = entry;
+  saveGrammarProgress(progress);
+  markStudied();
+
+  const submitBtn = document.getElementById('grammar-quiz-submit-btn');
+  submitBtn.style.display = 'none';
+  const scoreDiv = document.createElement('div');
+  scoreDiv.className = 'pron-result ' + (score===c.quiz.length ? 'ok' : 'bad');
+  scoreDiv.textContent = `得分：${score} / ${c.quiz.length}`;
+  document.getElementById('grammar-questions').appendChild(scoreDiv);
+}
+
+/* ---------- READING ---------- */
+const LS_READING = 'el_reading';
+
+const READINGS = [
+  {
+    id:'r1',
+    title:'A Morning Routine',
+    grammarFocus:['g2'],
+    text:`Every morning, my alarm goes off at six thirty. I don't jump out of bed right away — I lie there for a few minutes and check my phone. Then I get up, stretch, and drink a glass of water. After that, I make a cup of coffee and sit by the window while it's still quiet outside. I like this time because no one is asking me for anything yet. Around seven, I take a shower and get dressed for work. I try to eat something small, even if it's just toast, because I know I'll get hungry by ten. By seven forty-five, I'm usually out the door. This simple routine helps me start the day feeling calm instead of rushed.`,
+    questions:[
+      { q:'What does the writer do right after the alarm goes off?', options:['Gets up immediately','Checks the phone while lying in bed','Makes coffee'], answer:1 },
+      { q:'Why does the writer like the quiet time in the morning?', options:['No one asks for anything yet','It is the coolest part of the day','The coffee tastes better then'], answer:0 },
+      { q:'What time does the writer usually leave the house?', options:['6:30','7:00','7:45'], answer:2 }
+    ]
+  },
+  {
+    id:'r2',
+    title:'My First Trip Abroad',
+    grammarFocus:['g2','g9'],
+    text:`Last year, I traveled outside my country for the first time. I was nervous before the flight because I had never used a foreign currency or spoken English with a stranger. At the airport, I got lost trying to find my gate, but a kind staff member helped me. Once I arrived, everything felt new — the food, the streets, even the way people said hello. I tried a local dish that I had never heard of, and it turned out to be delicious. On my last day, I bought a small souvenir for my family. Looking back, I realize the trip taught me something important: being nervous is normal, but it shouldn't stop you from trying new things.`,
+    questions:[
+      { q:'Why was the writer nervous before the flight?', options:['The flight was very long','Never used foreign currency or spoken English with a stranger','Afraid of flying'], answer:1 },
+      { q:'What helped the writer at the airport?', options:['A map','A kind staff member','A friend'], answer:1 },
+      { q:'What lesson did the writer learn from the trip?', options:['Traveling is expensive','Being nervous shouldn’t stop you from trying new things','Foreign food is always delicious'], answer:1 }
+    ]
+  },
+  {
+    id:'r3',
+    title:'Working From Home',
+    grammarFocus:['g2','g16'],
+    text:`When I started working from home, I thought it would be easy. I imagined flexible hours and no commute. In some ways, that was true — I saved a lot of time not traveling to the office. But I also found new problems. My cat kept walking across my keyboard during meetings, and it was hard to ignore the dishes in the sink. Without coworkers around, I sometimes forgot to take breaks and worked past my deadline without noticing. After a few months, I learned to set clear working hours and created a small desk area just for work. Now I close my laptop at six and don't check messages until the next morning. It took practice, but I finally found a balance.`,
+    questions:[
+      { q:'What problem did the writer have while working from home?', options:['Too many meetings','Distractions like the cat and dishes','Slow internet'], answer:1 },
+      { q:'What did the writer do to fix the problem?', options:['Quit the job','Set clear working hours and a work area','Hired an assistant'], answer:1 },
+      { q:'What does the writer do at six now?', options:['Starts working','Closes the laptop','Checks messages'], answer:1 }
+    ]
+  },
+  {
+    id:'r4',
+    title:'Learning a New Hobby',
+    grammarFocus:['g2','g11'],
+    text:`Two months ago, I decided to learn how to play the guitar. At first, my fingers hurt every time I practiced, and I couldn't even play a full song. I got frustrated and almost gave up during the first week. But I kept practicing for just fifteen minutes a day, and slowly, things got easier. Now I can play three simple songs, and my fingers don't hurt anymore. I still make mistakes, but I've noticed that I improve a little every week. Learning something new as an adult is harder than I expected, but it also feels more rewarding. I've learned that patience matters more than talent.`,
+    questions:[
+      { q:'How did the writer feel during the first week of practice?', options:['Excited','Frustrated','Bored'], answer:1 },
+      { q:'How long does the writer practice each day?', options:['Fifteen minutes','One hour','All day'], answer:0 },
+      { q:'What has the writer learned about learning something new?', options:['Talent matters more than patience','Patience matters more than talent','It is impossible for adults'], answer:1 }
+    ]
+  },
+  {
+    id:'r5',
+    title:'Advice From a Friend',
+    grammarFocus:['g9','g13'],
+    text:`Last week, I told my friend Mia that I was thinking about quitting my job. Mia, who has worked in three different companies, gave me some honest advice. She said I should think carefully before making such a big decision. "You must consider your savings first," she told me. "And you could always look for a new job before you quit this one." I also talked to my brother, who studied business in college. He said something similar: it might be smart to wait a few more months. Their advice, which I really appreciated, helped me see the situation more clearly. In the end, I decided I shouldn't rush into anything.`,
+    questions:[
+      { q:'What does Mia think the writer should do first?', options:['Quit immediately','Consider savings first','Ask for a raise'], answer:1 },
+      { q:"What did the writer's brother suggest?", options:['Wait a few more months','Study business','Move to a new city'], answer:0 },
+      { q:'What did the writer decide in the end?', options:['To quit right away','Not to rush into anything','To ignore the advice'], answer:1 }
+    ]
+  },
+  {
+    id:'r6',
+    title:"A Job I'd Love",
+    grammarFocus:['g10','g11'],
+    text:`I've always wanted to work in a creative field. I enjoy drawing more than writing, and I love spending hours designing things on my computer. My current job is easier than my last one, but it's also less interesting. I've decided to apply for a design position at a new company. It pays a little more than my current job, and the work sounds more exciting. To prepare, I plan to finish building my portfolio this month. I hope to start practicing new skills every weekend, too. My friend says I'm braver than she is for making this change, but I think it's worth trying. The hardest part is simply deciding to begin.`,
+    questions:[
+      { q:'What does the writer enjoy more, drawing or writing?', options:['Writing','Drawing','Neither'], answer:1 },
+      { q:'What does the writer plan to finish this month?', options:['A new job','A portfolio','A house'], answer:1 },
+      { q:"According to the writer's friend, the writer is ___ than her.", options:['braver','busier','older'], answer:0 }
+    ]
+  },
+  {
+    id:'r7',
+    title:'What If I Had Studied Abroad?',
+    grammarFocus:['g14','g13'],
+    text:`Sometimes I wonder what my life would be like if I had studied abroad after high school. If I had gone to another country, I would have learned a new language much faster. I also think I would be more confident now if I had faced those challenges when I was younger. Of course, if I go abroad now, it won't be the same experience — I'll have more responsibilities and less free time. Still, if I ever get the chance, I will take it without hesitation. My sister, who did study abroad, always tells me that if I really want something, I should stop overthinking and just try. I know she's right, even if it's a little scary.`,
+    questions:[
+      { q:'What does the writer imagine about studying abroad in the past?', options:['It would have made them learn a language faster','It would have been a waste of time','It never crossed their mind'], answer:0 },
+      { q:'What does the writer say about going abroad now?', options:['It would be exactly the same','It won’t be the same experience','It’s impossible'], answer:1 },
+      { q:"What advice does the writer's sister give?", options:['Stop overthinking and just try','Save more money first','Never take risks'], answer:0 }
+    ]
+  },
+  {
+    id:'r8',
+    title:'The Museum by the River',
+    grammarFocus:['g7','g19'],
+    text:`There is a small museum near my house that I visit every few months. It was built almost a hundred years ago, and it has been renovated twice since then. Most of the artwork inside was painted by local artists, and many of the old photographs were donated by families in the town. There are also several rooms that are rarely opened to the public. Last month, a new exhibit was added, and it was designed by a team of young artists. I was really impressed by how the space had been organized. If you're ever in town, this museum is definitely worth a visit.`,
+    questions:[
+      { q:'How was most of the artwork created?', options:['Painted by local artists','Bought from another country','Made by machines'], answer:0 },
+      { q:'What happened last month?', options:['The museum closed','A new exhibit was added','The museum moved'], answer:1 },
+      { q:'What does the writer think about the museum?', options:["It's not interesting","It's worth a visit","It's too expensive"], answer:1 }
+    ]
+  },
+  {
+    id:'r9',
+    title:'She Told Me a Secret',
+    grammarFocus:['g15','g18'],
+    text:`Yesterday, my coworker pulled me aside and told me she was planning to quit soon. She said she had been thinking about it for months and that she couldn't put it off any longer. She also mentioned that she was going to look for a job in another city. I told her I would miss working with her, and she said she would miss it too. Later, she asked me not to bring it up with our boss yet, since she hadn't figured out the right time to tell him. I promised I wouldn't give away her secret. It's strange to think that everything might change so soon, but I understand why she wants to move on.`,
+    questions:[
+      { q:'What did the coworker say she had been thinking about?', options:['Getting a promotion','Quitting her job','Taking a vacation'], answer:1 },
+      { q:'What did she ask the writer not to do?', options:['Bring it up with the boss','Tell her family','Post about it online'], answer:0 },
+      { q:'What did the writer promise?', options:['To help her find a new job','Not to give away her secret','To quit too'], answer:1 }
+    ]
+  },
+  {
+    id:'r10',
+    title:'Interesting or Interested?',
+    grammarFocus:['g17'],
+    text:`My little cousin asked me an interesting question the other day: why do some English words end in -ing and others end in -ed, even though they look related? I told her it depends on who is doing what. If something makes you feel a certain way, it's usually -ing — like a boring movie or an exciting trip. But if you are the one feeling that way, it's -ed — like a bored student or an excited traveler. She seemed confused at first, but after a few examples, she got it. I was surprised by how quickly she understood something that had confused me for years.`,
+    questions:[
+      { q:'What does -ing usually describe?', options:['The thing causing the feeling','The person feeling it','A past event'], answer:0 },
+      { q:'What does -ed usually describe?', options:['The thing causing the feeling','The person feeling it','A future event'], answer:1 },
+      { q:'How did the cousin react?', options:['She never understood','She got confused and gave up','She understood after examples'], answer:2 }
+    ]
+  }
+];
+
+function loadReadingProgress(){ return JSON.parse(localStorage.getItem(LS_READING) || '{}'); }
+function saveReadingProgress(p){ localStorage.setItem(LS_READING, JSON.stringify(p)); }
+
+const GRAMMAR_SHORT = {
+  g1:'語序邏輯', g2:'時態邏輯', g3:'冠詞邏輯', g4:'可數/不可數', g5:'介系詞邏輯',
+  g6:'疑問句邏輯', g7:'被動語態', g8:'連接詞邏輯', g9:'情態動詞', g10:'動名詞vs不定詞',
+  g11:'比較級', g12:'主詞動詞一致', g13:'關係代名詞', g14:'條件句', g15:'間接引語',
+  g16:'使役動詞', g17:'分詞形容詞', g18:'片語動詞', g19:'There is/are', g20:'構詞邏輯'
+};
+
+function grammarFocusTags(ids){
+  if(!ids || ids.length===0) return '';
+  return `<div class="grammar-tag-row">${ids.map(gid=>{
+    const num = GRAMMAR.findIndex(c=>c.id===gid) + 1;
+    return `<span class="grammar-tag" data-goto="${gid}">第${num}章・${GRAMMAR_SHORT[gid]||gid}</span>`;
+  }).join('')}</div>`;
+}
+
+function wireGrammarTags(container){
+  container.querySelectorAll('.grammar-tag').forEach(tag=>{
+    tag.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      goToGrammarChapter(tag.dataset.goto);
+    });
+  });
+}
+
+function goToGrammarChapter(gid){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelector('.tab-btn[data-tab="grammar"]').classList.add('active');
+  document.getElementById('panel-grammar').classList.add('active');
+  currentGrammarId = gid;
+  renderGrammar();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+let currentReadingId = null;
+
+function renderReading(){
+  if(currentReadingId) renderReadingDetail();
+  else renderReadingList();
+}
+
+function renderReadingList(){
+  const progress = loadReadingProgress();
+  const area = document.getElementById('reading-area');
+  area.innerHTML = `<div class="sub" style="margin-bottom:6px;">讀完短文後做理解測驗，練習不查字典也能抓住大意</div>` +
+    READINGS.map(r=>{
+      const p = progress[r.id];
+      const preview = r.text.slice(0,70) + '...';
+      return `
+        <div class="card reading-card" data-open="${r.id}">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+            <h3 style="margin:0;">${r.title}</h3>
+            ${p ? `<span class="pos-tag" style="white-space:nowrap;">已完成 ${p.score}/${p.total}</span>` : ''}
+          </div>
+          <div class="sub" style="margin:8px 0 0;">${preview}</div>
+          ${grammarFocusTags(r.grammarFocus)}
+        </div>
+      `;
+    }).join('');
+  area.querySelectorAll('[data-open]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      currentReadingId = el.dataset.open;
+      renderReading();
+    });
+  });
+  wireGrammarTags(area);
+}
+
+function renderReadingDetail(){
+  const r = READINGS.find(x=>x.id===currentReadingId);
+  const area = document.getElementById('reading-area');
+  area.innerHTML = `
+    <button class="action btn-ghost" id="reading-back-btn" style="margin-bottom:14px;">← 返回文章列表</button>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <h3 style="margin:0;">${r.title}</h3>
+        <button class="icon-btn" id="reading-speak-btn" title="朗讀全文" style="width:32px;height:32px;font-size:0.95rem;">🔊</button>
+      </div>
+      ${grammarFocusTags(r.grammarFocus)}
+      <div class="reading-text" style="margin-top:12px;">${r.text}</div>
+    </div>
+    <div class="card">
+      <h3>理解測驗</h3>
+      <div id="reading-questions"></div>
+      <button class="action btn-primary" id="reading-submit-btn">提交答案</button>
+    </div>
+  `;
+  const qEl = document.getElementById('reading-questions');
+  r.questions.forEach((q, qi)=>{
+    const block = document.createElement('div');
+    block.className = 'q-block';
+    block.innerHTML = `<div class="q-title">${qi+1}. ${q.q}</div>` +
+      q.options.map((opt,oi)=>`
+        <label class="q-opt" data-qi="${qi}" data-oi="${oi}">
+          <input type="radio" name="rq${qi}" value="${oi}">${opt}
+        </label>
+      `).join('');
+    qEl.appendChild(block);
+  });
+  document.getElementById('reading-back-btn').addEventListener('click', ()=>{
+    currentReadingId = null;
+    renderReading();
+  });
+  document.getElementById('reading-speak-btn').addEventListener('click', ()=> speak(r.text));
+  document.getElementById('reading-submit-btn').addEventListener('click', ()=> submitReading(r));
+  wireGrammarTags(area);
+}
+
+function submitReading(r){
+  let score = 0;
+  r.questions.forEach((q, qi)=>{
+    const checked = document.querySelector(`input[name="rq${qi}"]:checked`);
+    const sel = checked ? parseInt(checked.value) : -1;
+    if(sel === q.answer) score++;
+    document.querySelectorAll(`.q-opt[data-qi="${qi}"]`).forEach(label=>{
+      const oi = parseInt(label.dataset.oi);
+      label.querySelector('input').disabled = true;
+      if(oi === q.answer) label.classList.add('opt-correct');
+      else if(oi === sel) label.classList.add('opt-wrong');
+    });
+  });
+
+  const progress = loadReadingProgress();
+  progress[r.id] = { score, total:r.questions.length, date: todayStr() };
+  saveReadingProgress(progress);
+  markStudied();
+
+  const submitBtn = document.getElementById('reading-submit-btn');
+  submitBtn.style.display = 'none';
+  const scoreDiv = document.createElement('div');
+  scoreDiv.className = 'pron-result ' + (score===r.questions.length ? 'ok' : 'bad');
+  scoreDiv.textContent = `得分：${score} / ${r.questions.length}`;
+  document.getElementById('reading-questions').appendChild(scoreDiv);
+}
+
+/* ---------- PROGRESS ---------- */
+function renderProgress(){
+  const log = loadLog();
+  document.getElementById('stat-streak').textContent = calcStreak(log);
+  document.getElementById('stat-total').textContent = vocab.length;
+  document.getElementById('stat-mastered').textContent = vocab.filter(w=>w.box>=5).length;
+
+  const modulesEl = document.getElementById('module-progress');
+  if(modulesEl){
+    const gp = loadGrammarProgress();
+    const grammarRead = GRAMMAR.filter(c=>gp[c.id]).length;
+    const grammarQuizEntries = GRAMMAR.filter(c=>gp[c.id] && typeof gp[c.id]==='object' && gp[c.id].quizScore!==undefined);
+    const grammarQuizText = grammarQuizEntries.length
+      ? `平均 ${Math.round(grammarQuizEntries.reduce((s,c)=>s+gp[c.id].quizScore/gp[c.id].quizTotal,0)/grammarQuizEntries.length*100)}%`
+      : '尚未測驗';
+
+    const rp = loadReadingProgress();
+    const readingDone = READINGS.filter(r=>rp[r.id]).length;
+    const readingEntries = READINGS.filter(r=>rp[r.id]);
+    const readingAvgText = readingEntries.length
+      ? `平均 ${Math.round(readingEntries.reduce((s,r)=>s+rp[r.id].score/rp[r.id].total,0)/readingEntries.length*100)}%`
+      : '尚未作答';
+
+    const idiomMastered = idioms.filter(w=>w.box>=5).length;
+
+    modulesEl.innerHTML = `
+      <div class="word-item">
+        <div class="info"><b>文法邏輯</b><span>已讀 ${grammarRead} / ${GRAMMAR.length} 章</span></div>
+        <div style="color:var(--ink-soft);font-size:0.85rem;">${grammarQuizText}</div>
+      </div>
+      <div class="word-item">
+        <div class="info"><b>閱讀</b><span>已完成 ${readingDone} / ${READINGS.length} 篇</span></div>
+        <div style="color:var(--ink-soft);font-size:0.85rem;">${readingAvgText}</div>
+      </div>
+      <div class="word-item">
+        <div class="info"><b>俗語支線</b><span>已熟練 ${idiomMastered} / ${idioms.length} 個</span></div>
+        <div></div>
+      </div>
+    `;
+  }
+
+  const hm = document.getElementById('heatmap');
+  hm.innerHTML = '';
+  const today = new Date();
+  const days = [];
+  for(let i=29;i>=0;i--){
+    const d = new Date(today);
+    d.setDate(d.getDate()-i);
+    const key = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    days.push(key);
+  }
+  days.forEach(key=>{
+    const div = document.createElement('div');
+    div.className = 'day' + (log[key] ? ' active' : '');
+    div.title = key + (log[key] ? '（有學習）' : '');
+    hm.appendChild(div);
+  });
+
+  const historyEl = document.getElementById('quiz-history');
+  const history = loadQuizHistory();
+  if(history.length===0){
+    historyEl.innerHTML = `<div class="empty-msg">還沒有測驗紀錄</div>`;
+  } else {
+    historyEl.innerHTML = history.slice(0,10).map(h=>
+      `<div class="word-item"><div class="info"><b>${h.date}</b></div><div>${h.score} / ${h.total}</div></div>`
+    ).join('');
+  }
+}
+
+function calcStreak(log){
+  let streak = 0;
+  let cursor = todayStr();
+  // if today not studied yet, streak still counts backwards from yesterday
+  if(!log[cursor]){
+    cursor = addDays(cursor, -1);
+  }
+  while(log[cursor]){
+    streak++;
+    cursor = addDays(cursor, -1);
+  }
+  return streak;
+}
+
+/* ---------- MANAGE ---------- */
+let editingId = null;
+
+function renderManage(){
+  document.getElementById('word-count').textContent = vocab.length;
+  const list = document.getElementById('word-list');
+  if(vocab.length===0){
+    list.innerHTML = `<div class="empty-msg">還沒有單字，新增一些吧！</div>`;
+    return;
+  }
+  list.innerHTML = [...vocab].reverse().map(w=>`
+    <div class="word-item">
+      <div class="info">
+        <b>${esc(w.en)}</b>${w.ipa ? ` <span style="color:var(--ink-soft);font-weight:400;">${esc(w.ipa)}</span>` : ''}${w.pos ? ` <span class="pos-tag" style="margin:0;">${esc(w.pos)}</span>` : ''}
+        <span>${w.meanings.map(m=>esc(m.zh)).join('；')}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;">
+        <span class="box-tag">Box ${w.box}</span>
+        <button class="del-btn" data-edit="${w.id}" title="編輯" style="color:var(--accent);">✎</button>
+        <button class="del-btn" data-del="${w.id}" title="刪除">✕</button>
+      </div>
+    </div>
+  `).join('');
+  list.querySelectorAll('[data-edit]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const w = vocab.find(x=>x.id === b.dataset.edit);
+      if(w) fillFormForEdit(w);
+    });
+  });
+  list.querySelectorAll('[data-del]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      vocab = vocab.filter(w=>w.id !== b.dataset.del);
+      saveVocab(vocab);
+      if(editingId === b.dataset.del) resetForm();
+      renderManage();
+    });
+  });
+}
+
+function fillFormForEdit(w){
+  editingId = w.id;
+  document.getElementById('form-title').textContent = '編輯單字';
+  document.getElementById('in-en').value = w.en;
+  document.getElementById('in-pos').value = w.pos || '';
+  document.getElementById('in-syllables').value = w.syllables || '';
+  document.getElementById('in-ipa').value = w.ipa || '';
+  document.getElementById('in-phonics').value = w.phonicsNote || '';
+  [0,1,2].forEach(i=>{
+    document.getElementById('in-zh-'+(i+1)).value = w.meanings[i] ? w.meanings[i].zh : '';
+    document.getElementById('in-example-'+(i+1)).value = w.meanings[i] ? (w.meanings[i].example||'') : '';
+    document.getElementById('in-example-zh-'+(i+1)).value = w.meanings[i] ? (w.meanings[i].exampleZh||'') : '';
+  });
+  document.getElementById('add-word-btn').textContent = '儲存修改';
+  document.getElementById('cancel-edit-btn').style.display = 'inline-block';
+  document.getElementById('form-title').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function resetForm(){
+  editingId = null;
+  document.getElementById('form-title').textContent = '新增單字 / 片語';
+  document.getElementById('in-en').value = '';
+  document.getElementById('in-pos').value = '';
+  document.getElementById('in-syllables').value = '';
+  document.getElementById('in-ipa').value = '';
+  document.getElementById('in-phonics').value = '';
+  [1,2,3].forEach(i=>{
+    document.getElementById('in-zh-'+i).value = '';
+    document.getElementById('in-example-'+i).value = '';
+    document.getElementById('in-example-zh-'+i).value = '';
+  });
+  document.getElementById('add-word-btn').textContent = '新增';
+  document.getElementById('cancel-edit-btn').style.display = 'none';
+}
+
+document.getElementById('cancel-edit-btn').addEventListener('click', resetForm);
+
+document.getElementById('add-word-btn').addEventListener('click', ()=>{
+  const en = document.getElementById('in-en').value.trim();
+  const pos = document.getElementById('in-pos').value;
+  const syllables = document.getElementById('in-syllables').value.trim();
+  const ipa = document.getElementById('in-ipa').value.trim();
+  const phonicsNote = document.getElementById('in-phonics').value.trim();
+  const meanings = [1,2,3].map(i=>({
+    zh: document.getElementById('in-zh-'+i).value.trim(),
+    example: document.getElementById('in-example-'+i).value.trim(),
+    exampleZh: document.getElementById('in-example-zh-'+i).value.trim()
+  })).filter(m=>m.zh);
+
+  if(!en || meanings.length===0){ alert('請至少填寫英文和一組中文意思'); return; }
+
+  if(editingId){
+    const w = vocab.find(x=>x.id===editingId);
+    if(w) Object.assign(w, { en, pos, syllables, ipa, phonicsNote, meanings });
+  } else {
+    vocab.push({
+      id:'w'+Date.now(), en, pos, syllables, ipa, phonicsNote, meanings,
+      emoji:'', image:'', credit:'', creditUrl:'',
+      box:1, nextReview: todayStr()
+    });
+  }
+  saveVocab(vocab);
+  resetForm();
+  renderManage();
+});
+
+document.getElementById('bulk-add-btn').addEventListener('click', ()=>{
+  const raw = document.getElementById('bulk-input').value;
+  const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
+  let added = 0;
+  lines.forEach((line, i)=>{
+    // 只切「前後都有空白的 -」，避免 well-known 這類本身帶連字號的單字被切錯
+    const sep = line.match(/\s-\s/);
+    if(!sep) return;
+    const en = line.slice(0, sep.index).trim();
+    const zh = line.slice(sep.index + sep[0].length).trim();
+    if(en && zh){
+      vocab.push({
+        id:'w'+Date.now()+i, en, pos:'', syllables:'', ipa:'', phonicsNote:'',
+        meanings:[{zh, example:'', exampleZh:''}],
+        emoji:'', image:'', credit:'', creditUrl:'',
+        box:1, nextReview: todayStr()
+      });
+      added++;
+    }
+  });
+  saveVocab(vocab);
+  document.getElementById('bulk-input').value='';
+  renderManage();
+  if(added>0) alert(`已新增 ${added} 個單字`);
+});
+
+
+document.getElementById('reset-vocab-btn').addEventListener('click', ()=>{
+  if(!confirm('確定要清空目前單字，換成 20 個簡易起始單字嗎？')) return;
+  vocab = SEED.map(seedToWord);
+  saveVocab(vocab);
+  resetForm();
+  renderManage();
+  alert('已重設完成！');
+});
+
+/* ---------- BACKUP ---------- */
+document.getElementById('export-btn').addEventListener('click', ()=>{
+  const backup = {
+    vocab: vocab,
+    log: loadLog(),
+    quizHistory: loadQuizHistory(),
+    idioms: idioms,
+    idiomQuizHistory: JSON.parse(localStorage.getItem(LS_IDIOM_QUIZ) || '[]'),
+    readingProgress: loadReadingProgress(),
+    grammarProgress: loadGrammarProgress(),
+    exportedAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `英文學習備份_${todayStr()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('import-btn').addEventListener('click', ()=>{
+  document.getElementById('import-file').click();
+});
+
+document.getElementById('import-file').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      const data = JSON.parse(reader.result);
+      if(!Array.isArray(data.vocab) || !data.vocab.every(w=>w && typeof w.en==='string' && Array.isArray(w.meanings))){
+        throw new Error('格式不正確');
+      }
+      if(!confirm('匯入將覆蓋目前所有單字與進度資料，確定要繼續嗎？')) return;
+      vocab = data.vocab;
+      saveVocab(vocab);
+      if(data.log) saveLog(data.log);
+      if(data.quizHistory) saveQuizHistory(data.quizHistory);
+      if(Array.isArray(data.idioms) && data.idioms.every(w=>w && typeof w.en==='string' && Array.isArray(w.meanings))){
+        idioms = data.idioms;
+        saveIdioms(idioms);
+      }
+      if(data.idiomQuizHistory) localStorage.setItem(LS_IDIOM_QUIZ, JSON.stringify(data.idiomQuizHistory));
+      if(data.readingProgress) saveReadingProgress(data.readingProgress);
+      if(data.grammarProgress) saveGrammarProgress(data.grammarProgress);
+      resetForm();
+      renderManage();
+      alert('匯入完成！');
+    } catch(err){
+      alert('匯入失敗，檔案格式不正確');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+/* ---------- VOICE PICKER ---------- */
+document.getElementById('voice-select').addEventListener('change', (e)=>{
+  localStorage.setItem(LS_VOICE, e.target.value);
+});
+document.getElementById('voice-test-btn').addEventListener('click', ()=>{
+  speak('Hello, this is how I sound. Nice to meet you.');
+});
+
+/* ---------- INIT ---------- */
+renderGrammar();
+</script>
+
+</body>
+</html>
