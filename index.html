@@ -1068,7 +1068,7 @@ function speak(text){
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'en-US';
-  u.rate = isSlowPlayback() ? 0.55 : 0.85;
+  u.rate = isSlowPlayback() ? 0.4 : 0.85;
   const voice = pickEnglishVoice();
   if(voice) u.voice = voice;
   window.speechSynthesis.speak(u);
