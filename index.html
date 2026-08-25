@@ -459,10 +459,90 @@
     letter-spacing:-0.01em;
   }
 
-  .idiom-subtab.active{
+  .idiom-subtab.active,
+  .quiz-mode-tab.active{
     background:var(--accent);
     border-color:var(--accent);
     color:#fff;
+  }
+  #slow-toggle-btn.active{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+  }
+  .tab-badge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:16px;
+    height:16px;
+    padding:0 4px;
+    border-radius:20px;
+    background:var(--bad);
+    color:#fff;
+    font-size:0.65rem;
+    font-weight:700;
+    margin-left:4px;
+    vertical-align:middle;
+  }
+  .daily-goal-bar{
+    max-width:800px;
+    margin:0 auto;
+    padding:10px 24px 0;
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .daily-goal-track{
+    flex:1;
+    height:8px;
+    background:var(--accent-soft);
+    border-radius:20px;
+    overflow:hidden;
+  }
+  .daily-goal-fill{
+    height:100%;
+    background:var(--accent);
+    border-radius:20px;
+    transition:width .4s ease;
+  }
+  .daily-goal-label{
+    font-size:0.78rem;
+    color:var(--ink-soft);
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  .goal-toast{
+    position:fixed;
+    left:50%;
+    bottom:28px;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--ink);
+    color:var(--bg);
+    padding:12px 22px;
+    border-radius:20px;
+    font-size:0.9rem;
+    font-weight:600;
+    box-shadow:var(--shadow-lg);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .3s ease, transform .3s ease;
+    z-index:100;
+  }
+  .goal-toast.show{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+  }
+  .diff-hint{
+    margin-top:6px;
+    font-size:0.82rem;
+    line-height:1.6;
+  }
+  .diff-hint .diff-mismatch{
+    text-decoration:underline;
+    text-decoration-color:var(--bad);
+    text-decoration-thickness:2px;
+    font-weight:700;
   }
 
   .grammar-tag-row{
@@ -534,6 +614,12 @@
   <button class="tab-btn" data-tab="manage">單字庫管理</button>
 </nav>
 
+<div class="daily-goal-bar" id="daily-goal-bar" style="display:none;">
+  <div class="daily-goal-track"><div class="daily-goal-fill" id="daily-goal-fill" style="width:0%;"></div></div>
+  <div class="daily-goal-label" id="daily-goal-label"></div>
+</div>
+<div class="goal-toast" id="goal-toast">🎉 今日目標達成！</div>
+
 <main>
 
   <!-- GRAMMAR LOGIC (書本式，預設首頁) -->
@@ -547,12 +633,17 @@
       <span class="sub" style="margin:0;">發音語音：</span>
       <select id="voice-select" style="flex:1;min-width:180px;"></select>
       <button class="action btn-ghost" id="voice-test-btn">試聽</button>
+      <button class="action btn-ghost" id="slow-toggle-btn" title="切換慢速播放">🐢 慢速</button>
     </div>
     <div id="flash-area"></div>
   </section>
 
   <!-- QUIZ -->
   <section class="panel" id="panel-quiz">
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button class="action btn-ghost quiz-mode-tab active" data-quiz-mode="read">👀 看字測驗</button>
+      <button class="action btn-ghost quiz-mode-tab" data-quiz-mode="listen">🎧 聽力測驗</button>
+    </div>
     <div class="card" id="quiz-area"></div>
   </section>
 
@@ -966,6 +1057,9 @@ function pickEnglishVoice(){
   return null;
 }
 
+const LS_SLOW = 'el_slow_playback';
+function isSlowPlayback(){ return localStorage.getItem(LS_SLOW) === '1'; }
+
 function speak(text){
   if(!('speechSynthesis' in window)){
     alert('你的瀏覽器不支援語音播放功能，建議改用 Chrome 或 Safari 最新版。');
@@ -974,7 +1068,7 @@ function speak(text){
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'en-US';
-  u.rate = 0.85;
+  u.rate = isSlowPlayback() ? 0.55 : 0.85;
   const voice = pickEnglishVoice();
   if(voice) u.voice = voice;
   window.speechSynthesis.speak(u);
@@ -982,6 +1076,32 @@ function speak(text){
 
 /* ---------- SPEECH: pronunciation check ---------- */
 const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+// 粗略的文字比對提示（不是真正的發音評分——瀏覽器語音辨識只會回傳它猜到的文字，
+// 沒辦法真的分析音節/長短音準不準，這裡只是幫你看出「辨識結果」跟目標拼法差在哪）
+function diffMarks(target, heard){
+  const a = target.split(''), b = heard.split('');
+  const dp = Array.from({length:a.length+1}, ()=>new Array(b.length+1).fill(0));
+  for(let i=1;i<=a.length;i++){
+    for(let j=1;j<=b.length;j++){
+      dp[i][j] = a[i-1]===b[j-1] ? dp[i-1][j-1]+1 : Math.max(dp[i-1][j], dp[i][j-1]);
+    }
+  }
+  let i=a.length, j=b.length;
+  const marks = new Array(a.length).fill(false);
+  while(i>0 && j>0){
+    if(a[i-1]===b[j-1]){ marks[i-1]=true; i--; j--; }
+    else if(dp[i-1][j] >= dp[i][j-1]) i--;
+    else j--;
+  }
+  return marks;
+}
+function renderDiffHint(target, heard){
+  if(!heard) return '';
+  const marks = diffMarks(target, heard);
+  const html = target.split('').map((ch,idx)=> marks[idx] ? esc(ch) : `<span class="diff-mismatch">${esc(ch)}</span>`).join('');
+  return `<div class="diff-hint">目標拼法對照：${html}<br><span style="opacity:.75;">畫底線的字母是辨識結果裡沒對應到的部分，僅供參考，不是精準的發音評分。</span></div>`;
+}
 
 function checkPronunciation(targetWord, micBtnId, resultBoxId){
   if(!SpeechRecognitionCtor){
@@ -1003,9 +1123,12 @@ function checkPronunciation(targetWord, micBtnId, resultBoxId){
     const alternatives = Array.from(event.results[0]).map(r=>r.transcript.trim().toLowerCase());
     const target = targetWord.toLowerCase().trim();
     const matched = alternatives.some(a => a === target || a.replace(/[.,!?]/g,'') === target);
-    resultBox.innerHTML = matched
-      ? `<div class="pron-result ok">✅ 發音正確！（辨識結果：${alternatives[0]}）</div>`
-      : `<div class="pron-result bad">🔁 再試一次！（辨識結果：${alternatives[0] || '（沒聽清楚）'}）</div>`;
+    if(matched){
+      resultBox.innerHTML = `<div class="pron-result ok">✅ 發音正確！（辨識結果：${esc(alternatives[0])}）</div>`;
+    } else {
+      const heard = (alternatives[0] || '').replace(/[.,!?]/g,'');
+      resultBox.innerHTML = `<div class="pron-result bad">🔁 再試一次！（辨識結果：${esc(alternatives[0] || '（沒聽清楚）')}）${heard ? renderDiffHint(target, heard) : ''}</div>`;
+    }
   };
   recognition.onerror = ()=>{
     resultBox.innerHTML = `<div class="pron-result bad">沒有偵測到聲音，請確認麥克風權限後再試一次</div>`;
@@ -1017,7 +1140,7 @@ function checkPronunciation(targetWord, micBtnId, resultBoxId){
 }
 
 /* ---------- 通用單字卡牌組控制器（主單字庫 / 俗語支線共用） ---------- */
-function makeFlashDeck({ getData, saveData, areaId, prefix }){
+function makeFlashDeck({ getData, saveData, areaId, prefix, onReview }){
   let queue = [], idx = 0, flipped = false;
 
   function render(){
@@ -1119,6 +1242,7 @@ function makeFlashDeck({ getData, saveData, areaId, prefix }){
     }
     saveData(getData());
     markStudied();
+    if(onReview) onReview();
     idx++;
     flipped = false;
     draw(true);
@@ -1141,14 +1265,14 @@ function shuffle(arr){
 function makeQuizController({ getData, areaId, historyKey }){
   let state = null;
 
-  function render(){
+  function render(listening){
     const area = document.getElementById(areaId);
     const data = getData();
     if(data.length < 4){
       area.innerHTML = `<div class="empty-msg">項目至少要有 4 個才能出小測驗，先去新增一些吧！</div>`;
       return;
     }
-    state = { qIndex:0, correct:0, questions: build(data) };
+    state = { qIndex:0, correct:0, questions: build(data), listening: !!listening };
     draw();
   }
 
@@ -1179,17 +1303,30 @@ function makeQuizController({ getData, areaId, historyKey }){
           <div style="font-size:2rem;color:var(--accent);margin:10px 0;">${score} / ${total}</div>
           <button class="action btn-primary" id="retry-${areaId}">再測一次</button>
         </div>`;
-      document.getElementById(`retry-${areaId}`).addEventListener('click', render);
+      document.getElementById(`retry-${areaId}`).addEventListener('click', ()=> render(state.listening));
       return;
     }
     const q = state.questions[state.qIndex];
     const w = q.word;
-    area.innerHTML = `
+    area.innerHTML = state.listening ? `
+      <div class="sub">題目 ${state.qIndex+1} / ${state.questions.length}　・　目前得分 ${state.correct}</div>
+      <div class="quiz-q" style="text-align:center;">🎧 聽發音，選出正確的意思</div>
+      <div style="text-align:center;margin-bottom:16px;">
+        <button class="icon-btn" id="listen-play-${areaId}" title="再聽一次" style="width:52px;height:52px;font-size:1.5rem;">🔊</button>
+      </div>
+      <div id="opts-${areaId}"></div>
+      <div id="explain-${areaId}"></div>
+    ` : `
       <div class="sub">題目 ${state.qIndex+1} / ${state.questions.length}　・　目前得分 ${state.correct}</div>
       <div class="quiz-q">${esc(w.en)} 的意思是？</div>
       <div id="opts-${areaId}"></div>
       <div id="explain-${areaId}"></div>
     `;
+    if(state.listening){
+      const playBtn = document.getElementById(`listen-play-${areaId}`);
+      playBtn.addEventListener('click', ()=> speak(w.en));
+      speak(w.en);
+    }
     const optsEl = document.getElementById(`opts-${areaId}`);
     q.options.forEach(opt=>{
       const b = document.createElement('button');
@@ -1237,10 +1374,10 @@ function makeQuizController({ getData, areaId, historyKey }){
 }
 
 /* ---------- 主單字庫 / 俗語支線 各自的牌組與測驗 ---------- */
-const vocabDeck = makeFlashDeck({ getData:()=>vocab, saveData:saveVocab, areaId:'flash-area', prefix:'v' });
+const vocabDeck = makeFlashDeck({ getData:()=>vocab, saveData:saveVocab, areaId:'flash-area', prefix:'v', onReview:()=>bumpDailyGoal() });
 const vocabQuiz = makeQuizController({ getData:()=>vocab, areaId:'quiz-area', historyKey:LS_QUIZ });
 
-const idiomDeck = makeFlashDeck({ getData:()=>idioms, saveData:saveIdioms, areaId:'idiom-flash-area', prefix:'idm' });
+const idiomDeck = makeFlashDeck({ getData:()=>idioms, saveData:saveIdioms, areaId:'idiom-flash-area', prefix:'idm', onReview:()=>renderTabBadges() });
 const idiomQuiz = makeQuizController({ getData:()=>idioms, areaId:'idiom-quiz-area', historyKey:LS_IDIOM_QUIZ });
 
 function renderFlash(){ vocabDeck.render(); }
@@ -2204,7 +2341,95 @@ document.getElementById('voice-test-btn').addEventListener('click', ()=>{
   speak('Hello, this is how I sound. Nice to meet you.');
 });
 
+const slowBtn = document.getElementById('slow-toggle-btn');
+if(isSlowPlayback()) slowBtn.classList.add('active');
+slowBtn.addEventListener('click', ()=>{
+  const next = !isSlowPlayback();
+  localStorage.setItem(LS_SLOW, next ? '1' : '0');
+  slowBtn.classList.toggle('active', next);
+});
+
+/* ---------- QUIZ MODE TOGGLE ---------- */
+document.querySelectorAll('.quiz-mode-tab').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.quiz-mode-tab').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    vocabQuiz.render(btn.dataset.quizMode === 'listen');
+  });
+});
+
+/* ---------- 今日目標 ---------- */
+const LS_DAILY_GOAL = 'el_daily_goal';
+function loadDailyGoal(){
+  const p = JSON.parse(localStorage.getItem(LS_DAILY_GOAL) || 'null');
+  const today = todayStr();
+  if(!p || p.date !== today){
+    const target = vocab.filter(w=>w.nextReview<=today).length;
+    return { date: today, target, done: 0, celebrated: false };
+  }
+  return p;
+}
+function saveDailyGoal(p){ localStorage.setItem(LS_DAILY_GOAL, JSON.stringify(p)); }
+
+function renderDailyGoal(){
+  const p = loadDailyGoal();
+  const bar = document.getElementById('daily-goal-bar');
+  if(p.target === 0){
+    bar.style.display = 'none';
+    renderTabBadges();
+    return;
+  }
+  bar.style.display = 'flex';
+  const pct = Math.min(100, Math.round((p.done / p.target) * 100));
+  document.getElementById('daily-goal-fill').style.width = pct + '%';
+  document.getElementById('daily-goal-label').textContent =
+    `🎯 今日目標：${Math.min(p.done, p.target)} / ${p.target} 已複習`;
+  if(p.done >= p.target && !p.celebrated){
+    p.celebrated = true;
+    saveDailyGoal(p);
+    showGoalToast();
+  }
+  renderTabBadges();
+}
+
+function showGoalToast(){
+  const toast = document.getElementById('goal-toast');
+  toast.classList.add('show');
+  setTimeout(()=> toast.classList.remove('show'), 2600);
+}
+
+function bumpDailyGoal(){
+  const p = loadDailyGoal();
+  p.done = (p.done || 0) + 1;
+  saveDailyGoal(p);
+  renderDailyGoal();
+}
+
+function renderTabBadges(){
+  const today = todayStr();
+  const dueVocab = vocab.filter(w=>w.nextReview<=today).length;
+  const dueIdioms = idioms.filter(w=>w.nextReview<=today).length;
+  setTabBadge('flash', dueVocab);
+  setTabBadge('idioms', dueIdioms);
+}
+function setTabBadge(tab, count){
+  const btn = document.querySelector('.tab-btn[data-tab="'+tab+'"]');
+  if(!btn) return;
+  let badge = btn.querySelector('.tab-badge');
+  if(count > 0){
+    if(!badge){
+      badge = document.createElement('span');
+      badge.className = 'tab-badge';
+      btn.appendChild(badge);
+    }
+    badge.textContent = count;
+  } else if(badge){
+    badge.remove();
+  }
+}
+
 /* ---------- INIT ---------- */
+renderDailyGoal();
 renderGrammar();
 </script>
 
