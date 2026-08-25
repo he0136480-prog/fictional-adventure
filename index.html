@@ -340,6 +340,37 @@
   .quiz-opt:not(:disabled):active{ transform:scale(0.99); }
   .quiz-opt.correct{ background:var(--good-soft); border-color:var(--good); }
   .quiz-opt.wrong{ background:var(--bad-soft); border-color:var(--bad); }
+  .quiz-explain{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px 20px;
+    margin-top:16px;
+    animation:fadeIn .2s ease;
+  }
+  .quiz-explain-head{
+    font-size:0.8rem;
+    font-weight:700;
+    color:var(--accent);
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    margin-bottom:8px;
+  }
+  .quiz-explain-word{
+    font-family:var(--serif);
+    font-size:1.3rem;
+    font-weight:600;
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .quiz-explain-ipa{
+    font-family:"SF Mono",Menlo,monospace;
+    font-size:0.85rem;
+    color:var(--ink-soft);
+    font-weight:400;
+  }
 
   /* Manage */
   .form-grid{
@@ -482,8 +513,15 @@
 <body>
 
 <header>
-  <h1>📚 我的英文學習程式</h1>
-  <div class="sub">文法邏輯 ・ 單字卡複習 ・ 小測驗 ・ 學習進度</div>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+    <div>
+      <h1>📚 我的英文學習程式</h1>
+      <div class="sub" style="margin-bottom:0;">文法邏輯 ・ 單字卡複習 ・ 小測驗 ・ 學習進度</div>
+    </div>
+    <a href="https://he0136480-prog.github.io/japanese-learning-app/" style="text-decoration:none;flex-shrink:0;">
+      <span class="pos-tag" style="margin:0;font-size:0.78rem;padding:6px 14px;">🇯🇵 切換到日文版 →</span>
+    </a>
+  </div>
 </header>
 
 <nav>
@@ -984,7 +1022,8 @@ function makeFlashDeck({ getData, saveData, areaId, prefix }){
 
   function render(){
     const today = todayStr();
-    queue = getData().filter(w => w.nextReview <= today);
+    // 每次開始新的一輪複習時洗牌一次，同一輪內順序固定（翻牌、上一張不會重新排序）
+    queue = shuffle(getData().filter(w => w.nextReview <= today));
     idx = 0;
     flipped = false;
     const area = document.getElementById(areaId);
@@ -992,10 +1031,10 @@ function makeFlashDeck({ getData, saveData, areaId, prefix }){
       area.innerHTML = `<div class="card empty-msg">🎉 這裡今天要複習的都完成了！</div>`;
       return;
     }
-    draw();
+    draw(true);
   }
 
-  function draw(){
+  function draw(autoSpeak){
     const area = document.getElementById(areaId);
     if(idx >= queue.length){
       area.innerHTML = `<div class="card empty-msg">✅ 這一輪複習完成了！（共 ${queue.length} 張）</div>`;
@@ -1049,9 +1088,10 @@ function makeFlashDeck({ getData, saveData, areaId, prefix }){
         e.stopPropagation();
         idx--;
         flipped = false;
-        draw();
+        draw(true);
       });
     }
+    if(autoSpeak) speak(w.en);
     if(flipped){
       document.getElementById(`${P}-mic-btn`).addEventListener('click', (e)=>{
         e.stopPropagation();
@@ -1081,13 +1121,23 @@ function makeFlashDeck({ getData, saveData, areaId, prefix }){
     markStudied();
     idx++;
     flipped = false;
-    draw();
+    draw(true);
   }
 
   return { render };
 }
 
 /* ---------- 通用小測驗控制器（主單字庫 / 俗語支線共用） ---------- */
+// Fisher-Yates 洗牌，比 sort(()=>Math.random()-0.5) 更均勻、真正隨機
+function shuffle(arr){
+  const a = [...arr];
+  for(let i=a.length-1; i>0; i--){
+    const j = Math.floor(Math.random() * (i+1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 function makeQuizController({ getData, areaId, historyKey }){
   let state = null;
 
@@ -1103,11 +1153,11 @@ function makeQuizController({ getData, areaId, historyKey }){
   }
 
   function build(data){
-    const pool = [...data].sort(()=>Math.random()-0.5).slice(0, Math.min(10, data.length));
+    const pool = shuffle(data).slice(0, Math.min(10, data.length));
     return pool.map(w=>{
-      const distractors = data.filter(x=>x.id!==w.id).sort(()=>Math.random()-0.5).slice(0,3).map(x=>primaryZh(x));
+      const distractors = shuffle(data.filter(x=>x.id!==w.id)).slice(0,3).map(x=>primaryZh(x));
       const answer = primaryZh(w);
-      const options = [...distractors, answer].sort(()=>Math.random()-0.5);
+      const options = shuffle([...distractors, answer]);
       return { word:w, options, answer };
     });
   }
@@ -1133,10 +1183,12 @@ function makeQuizController({ getData, areaId, historyKey }){
       return;
     }
     const q = state.questions[state.qIndex];
+    const w = q.word;
     area.innerHTML = `
       <div class="sub">題目 ${state.qIndex+1} / ${state.questions.length}　・　目前得分 ${state.correct}</div>
-      <div class="quiz-q">${esc(q.word.en)} 的意思是？</div>
+      <div class="quiz-q">${esc(w.en)} 的意思是？</div>
       <div id="opts-${areaId}"></div>
+      <div id="explain-${areaId}"></div>
     `;
     const optsEl = document.getElementById(`opts-${areaId}`);
     q.options.forEach(opt=>{
@@ -1150,9 +1202,34 @@ function makeQuizController({ getData, areaId, historyKey }){
           else if(bb.textContent === opt) bb.classList.add('wrong');
         });
         if(opt === q.answer) state.correct++;
-        setTimeout(()=>{ state.qIndex++; draw(); }, 700);
+        showExplanation(q, opt === q.answer);
       });
       optsEl.appendChild(b);
+    });
+  }
+
+  function showExplanation(q, wasCorrect){
+    const w = q.word;
+    const m = w.meanings && w.meanings[0];
+    const explainEl = document.getElementById(`explain-${areaId}`);
+    explainEl.innerHTML = `
+      <div class="quiz-explain">
+        <div class="quiz-explain-head">${wasCorrect ? '✅ 答對了' : '🔁 正確答案如下'}</div>
+        <div class="quiz-explain-word">
+          ${esc(w.en)}
+          ${(w.syllables || w.ipa) ? `<span class="quiz-explain-ipa">${[w.syllables, w.ipa].map(esc).filter(Boolean).join('　')}</span>` : ''}
+        </div>
+        ${w.pos ? `<span class="pos-tag" style="margin:8px 0 0;">${esc(w.pos)}</span>` : ''}
+        <div class="meaning" style="margin-top:8px;">${esc(q.answer)}</div>
+        ${m && m.example ? `<div class="example">${esc(m.example)}</div>` : ''}
+        ${m && m.exampleZh ? `<div class="example-zh">${esc(m.exampleZh)}</div>` : ''}
+        ${w.phonicsNote ? `<div class="phonics-note">🔤 ${esc(w.phonicsNote)}</div>` : ''}
+      </div>
+      <button class="action btn-primary" id="next-${areaId}" style="margin-top:14px;">下一題 →</button>
+    `;
+    document.getElementById(`next-${areaId}`).addEventListener('click', ()=>{
+      state.qIndex++;
+      draw();
     });
   }
 
