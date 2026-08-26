@@ -554,6 +554,37 @@
     opacity:1;
     transform:translateX(-50%) translateY(0);
   }
+  .milestone-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(20,15,10,0.45);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:200;
+    padding:24px;
+    animation:fadeIn .2s ease;
+  }
+  .milestone-card{
+    background:var(--card);
+    border-radius:var(--radius);
+    padding:28px 26px;
+    max-width:340px;
+    text-align:center;
+    box-shadow:var(--shadow-lg);
+  }
+  .milestone-title{
+    font-family:var(--serif);
+    font-size:1.3rem;
+    font-weight:600;
+    margin-bottom:10px;
+  }
+  .milestone-desc{
+    font-size:0.88rem;
+    color:var(--ink-soft);
+    line-height:1.6;
+    margin-bottom:20px;
+  }
   .diff-hint{
     margin-top:6px;
     font-size:0.82rem;
@@ -640,6 +671,17 @@
   <div class="daily-goal-label" id="daily-goal-label"></div>
 </div>
 <div class="goal-toast" id="goal-toast">🎉 今日目標達成！</div>
+
+<div class="milestone-overlay" id="milestone-modal" style="display:none;">
+  <div class="milestone-card">
+    <div class="milestone-title">🎯 已複習 20 個單字！</div>
+    <div class="milestone-desc">趁記憶還新鮮，要不要花 2 分鐘做個小測驗鞏固一下？題目只從你剛剛複習過的這 20 個字出。</div>
+    <div class="btn-row" style="justify-content:center;">
+      <button class="action btn-ghost" id="milestone-skip-btn">稍後再說</button>
+      <button class="action btn-primary" id="milestone-quiz-btn">開始測驗</button>
+    </div>
+  </div>
+</div>
 
 <main>
 
@@ -1309,7 +1351,7 @@ function makeFlashDeck({ getData, saveData, areaId, prefix, onReview }){
     }
     saveData(getData());
     markStudied();
-    if(onReview) onReview();
+    if(onReview) onReview(w);
     idx++;
     flipped = false;
     draw(true);
@@ -1332,19 +1374,23 @@ function shuffle(arr){
 function makeQuizController({ getData, areaId, historyKey }){
   let state = null;
 
-  function render(listening){
+  function render(listening, focusIds){
     const area = document.getElementById(areaId);
     const data = getData();
     if(data.length < 4){
       area.innerHTML = `<div class="empty-msg">項目至少要有 4 個才能出小測驗，先去新增一些吧！</div>`;
       return;
     }
-    state = { qIndex:0, correct:0, questions: build(data), listening: !!listening };
+    const focusPool = focusIds ? data.filter(w=>focusIds.includes(w.id)) : null;
+    state = { qIndex:0, correct:0, questions: build(data, focusPool), listening: !!listening };
     draw();
   }
 
-  function build(data){
-    const pool = shuffle(data).slice(0, Math.min(10, data.length));
+  function build(data, focusPool){
+    // focusPool 給定時，出題範圍只從這裡抽（例如「剛複習過的 20 個字」），
+    // 但干擾選項仍從完整 data 抽，避免範圍太小時選項不夠多樣
+    const questionSource = (focusPool && focusPool.length >= 1) ? focusPool : data;
+    const pool = shuffle(questionSource).slice(0, Math.min(10, questionSource.length));
     return pool.map(w=>{
       const distractors = shuffle(data.filter(x=>x.id!==w.id)).slice(0,3).map(x=>primaryZh(x));
       const answer = primaryZh(w);
@@ -1441,7 +1487,7 @@ function makeQuizController({ getData, areaId, historyKey }){
 }
 
 /* ---------- 主單字庫 / 俗語支線 各自的牌組與測驗 ---------- */
-const vocabDeck = makeFlashDeck({ getData:()=>vocab, saveData:saveVocab, areaId:'flash-area', prefix:'v', onReview:()=>bumpDailyGoal() });
+const vocabDeck = makeFlashDeck({ getData:()=>vocab, saveData:saveVocab, areaId:'flash-area', prefix:'v', onReview:(w)=>{ bumpDailyGoal(); bumpMilestone(w.id); } });
 const vocabQuiz = makeQuizController({ getData:()=>vocab, areaId:'quiz-area', historyKey:LS_QUIZ });
 
 const idiomDeck = makeFlashDeck({ getData:()=>idioms, saveData:saveIdioms, areaId:'idiom-flash-area', prefix:'idm', onReview:()=>renderTabBadges() });
@@ -2494,6 +2540,52 @@ function setTabBadge(tab, count){
   } else if(badge){
     badge.remove();
   }
+}
+
+/* ---------- 每複習 20 個單字跳出檢核測驗 ---------- */
+const LS_MILESTONE = 'el_milestone';
+const MILESTONE_SIZE = 20;
+
+function loadMilestone(){
+  return JSON.parse(localStorage.getItem(LS_MILESTONE) || 'null') || { totalReviews:0, lastCheckpoint:0, recentIds:[] };
+}
+function saveMilestone(m){ localStorage.setItem(LS_MILESTONE, JSON.stringify(m)); }
+
+function bumpMilestone(wordId){
+  const m = loadMilestone();
+  m.totalReviews++;
+  m.recentIds.push(wordId);
+  if(m.recentIds.length > MILESTONE_SIZE) m.recentIds = m.recentIds.slice(-MILESTONE_SIZE);
+  if(m.totalReviews - m.lastCheckpoint >= MILESTONE_SIZE){
+    m.lastCheckpoint = m.totalReviews;
+    saveMilestone(m);
+    showMilestonePrompt(m.recentIds.slice());
+    return;
+  }
+  saveMilestone(m);
+}
+
+function showMilestonePrompt(recentIds){
+  const modal = document.getElementById('milestone-modal');
+  modal.style.display = 'flex';
+  document.getElementById('milestone-skip-btn').onclick = ()=>{
+    modal.style.display = 'none';
+  };
+  document.getElementById('milestone-quiz-btn').onclick = ()=>{
+    modal.style.display = 'none';
+    goToMilestoneQuiz(recentIds);
+  };
+}
+
+function goToMilestoneQuiz(recentIds){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelector('.tab-btn[data-tab="quiz"]').classList.add('active');
+  document.getElementById('panel-quiz').classList.add('active');
+  document.querySelectorAll('.quiz-mode-tab').forEach(b=>b.classList.remove('active'));
+  document.querySelector('.quiz-mode-tab[data-quiz-mode="read"]').classList.add('active');
+  vocabQuiz.render(false, recentIds);
+  window.scrollTo({top:0, behavior:'smooth'});
 }
 
 /* ---------- INIT ---------- */
