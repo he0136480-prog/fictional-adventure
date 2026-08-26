@@ -1128,13 +1128,23 @@ function speak(text){
     alert('你的瀏覽器不支援語音播放功能，建議改用 Chrome 或 Safari 最新版。');
     return;
   }
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'en-US';
-  u.rate = isSlowPlayback() ? 0.4 : 0.85;
-  const voice = pickEnglishVoice();
-  if(voice) u.voice = voice;
-  window.speechSynthesis.speak(u);
+  const synth = window.speechSynthesis;
+  const doSpeak = ()=>{
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    u.rate = isSlowPlayback() ? 0.4 : 0.85;
+    const voice = pickEnglishVoice();
+    if(voice) u.voice = voice;
+    synth.speak(u);
+  };
+  if(synth.speaking || synth.pending){
+    // iOS Safari 等行動瀏覽器，cancel() 之後立刻 speak() 常常會把新語音吃掉、完全沒聲音，
+    // 只有「真的有東西在播放時」才需要先取消、並加一點延遲再播新的
+    synth.cancel();
+    setTimeout(doSpeak, 60);
+  } else {
+    doSpeak();
+  }
 }
 
 /* ---------- SPEECH: pronunciation check ---------- */
