@@ -1371,11 +1371,23 @@ function makeFlashDeck({ getData, saveData, areaId, prefix, onReview }){
 }
 
 /* ---------- 通用小測驗控制器（主單字庫 / 俗語支線共用） ---------- */
+// 用加密等級的隨機數（crypto.getRandomValues）而不是 Math.random()，
+// 某些瀏覽器的 Math.random() 品質沒那麼好，陣列小的時候容易讓人覺得「順序都差不多」；
+// 沒有 crypto 支援時退回 Math.random() 保底
+function randomInt(maxExclusive){
+  if(window.crypto && window.crypto.getRandomValues){
+    const buf = new Uint32Array(1);
+    window.crypto.getRandomValues(buf);
+    return buf[0] % maxExclusive;
+  }
+  return Math.floor(Math.random() * maxExclusive);
+}
+
 // Fisher-Yates 洗牌，比 sort(()=>Math.random()-0.5) 更均勻、真正隨機
 function shuffle(arr){
   const a = [...arr];
   for(let i=a.length-1; i>0; i--){
-    const j = Math.floor(Math.random() * (i+1));
+    const j = randomInt(i+1);
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
@@ -1402,10 +1414,14 @@ function makeQuizController({ getData, areaId, historyKey }){
     const questionSource = (focusPool && focusPool.length >= 1) ? focusPool : data;
     const pool = shuffle(questionSource).slice(0, Math.min(10, questionSource.length));
     return pool.map(w=>{
-      const distractors = shuffle(data.filter(x=>x.id!==w.id)).slice(0,3).map(x=>primaryZh(x));
       const answer = primaryZh(w);
+      // 干擾選項要排除跟正確答案「中文意思完全相同」的字，
+      // 不然單字庫裡剛好有兩個字意思重複時，選項會出現兩個一模一樣的答案，
+      // 造成「怎麼選都覺得系統判斷錯」的狀況
+      const distractors = shuffle(data.filter(x=>x.id!==w.id && primaryZh(x)!==answer)).slice(0,3).map(x=>primaryZh(x));
       const options = shuffle([...distractors, answer]);
-      return { word:w, options, answer };
+      const answerIndex = options.indexOf(answer);
+      return { word:w, options, answer, answerIndex };
     });
   }
 
@@ -1451,18 +1467,22 @@ function makeQuizController({ getData, areaId, historyKey }){
       speak(w.en);
     }
     const optsEl = document.getElementById(`opts-${areaId}`);
-    q.options.forEach(opt=>{
+    q.options.forEach((opt, oi)=>{
       const b = document.createElement('button');
       b.className = 'quiz-opt';
       b.textContent = opt;
       b.addEventListener('click', ()=>{
-        document.querySelectorAll(`#opts-${areaId} .quiz-opt`).forEach(bb=>{
+        // 用「選項在陣列裡的位置」判斷對錯，不要用文字內容比對——
+        // 如果單字庫裡剛好有兩個字中文意思重複，用文字比對會同時點亮兩個按鈕，
+        // 造成使用者覺得「怎麼選都算對/都算錯」的錯亂
+        document.querySelectorAll(`#opts-${areaId} .quiz-opt`).forEach((bb, bi)=>{
           bb.disabled = true;
-          if(bb.textContent === q.answer) bb.classList.add('correct');
-          else if(bb.textContent === opt) bb.classList.add('wrong');
+          if(bi === q.answerIndex) bb.classList.add('correct');
+          else if(bi === oi) bb.classList.add('wrong');
         });
-        if(opt === q.answer) state.correct++;
-        showExplanation(q, opt === q.answer);
+        const wasCorrect = oi === q.answerIndex;
+        if(wasCorrect) state.correct++;
+        showExplanation(q, wasCorrect);
       });
       optsEl.appendChild(b);
     });
