@@ -640,6 +640,41 @@
   .q-opt input{width:auto;margin-right:8px;}
   .q-opt.opt-correct{ background:var(--good-soft); border-color:var(--good); }
   .q-opt.opt-wrong{ background:var(--bad-soft); border-color:var(--bad); }
+
+  /* 問題筆記本浮動按鈕 */
+  .q-fab{
+    position:fixed; right:20px; bottom:20px; width:56px; height:56px;
+    border-radius:50%; background:var(--accent); color:#fff; border:none;
+    font-size:1.5rem; box-shadow:var(--shadow-lg); cursor:pointer; z-index:150;
+    display:flex; align-items:center; justify-content:center;
+    transition:transform .15s ease;
+  }
+  .q-fab:hover{ transform:scale(1.08); }
+  .q-fab:active{ transform:scale(0.95); }
+  .q-fab-badge{
+    position:absolute; top:-2px; right:-2px; background:var(--bad); color:#fff;
+    font-size:0.65rem; font-weight:700; min-width:18px; height:18px; padding:0 4px;
+    border-radius:20px; display:flex; align-items:center; justify-content:center;
+  }
+  .q-panel{
+    display:none; position:fixed; right:20px; bottom:88px; width:320px;
+    max-width:calc(100vw - 40px); max-height:70vh; background:var(--card);
+    border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow-lg);
+    padding:16px; z-index:150; flex-direction:column; gap:10px; overflow:hidden;
+  }
+  .q-panel-head{ display:flex; justify-content:space-between; align-items:center; font-weight:700; font-family:var(--serif); font-size:1.05rem; }
+  .q-panel-close{ border:none; background:none; cursor:pointer; font-size:1rem; color:var(--ink-soft); }
+  .q-panel-note{ font-size:0.74rem; color:var(--ink-soft); line-height:1.55; }
+  .q-list{ overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:8px; min-height:0; }
+  .q-item{ background:var(--accent-soft); border-radius:10px; padding:9px 11px; }
+  .q-item-time{ font-size:0.68rem; color:var(--ink-soft); margin-bottom:3px; }
+  .q-item-text{ font-size:0.85rem; line-height:1.5; white-space:pre-wrap; }
+  .q-item-actions{ display:flex; gap:12px; margin-top:6px; }
+  .q-item-actions button{ font-size:0.72rem; border:none; background:none; cursor:pointer; color:var(--accent-2); padding:0; }
+  @media (max-width:480px){
+    .q-panel{ right:12px; left:12px; width:auto; bottom:84px; }
+    .q-fab{ right:16px; bottom:16px; }
+  }
 </style>
 </head>
 <body>
@@ -2618,10 +2653,102 @@ function goToMilestoneQuiz(recentIds){
   window.scrollTo({top:0, behavior:'smooth'});
 }
 
+/* ---------- 問題筆記本（右下角浮動按鈕） ---------- */
+const Q_NOTES_KEY = 'el_question_notes';
+function loadQNotes(){ return JSON.parse(localStorage.getItem(Q_NOTES_KEY) || '[]'); }
+function saveQNotes(list){ localStorage.setItem(Q_NOTES_KEY, JSON.stringify(list)); }
+
+function updateQBadge(count){
+  const fab = document.getElementById('q-fab');
+  if(!fab) return;
+  let badge = fab.querySelector('.q-fab-badge');
+  if(count > 0){
+    if(!badge){ badge = document.createElement('span'); badge.className = 'q-fab-badge'; fab.appendChild(badge); }
+    badge.textContent = count;
+  } else if(badge){
+    badge.remove();
+  }
+}
+
+function renderQList(){
+  const list = loadQNotes();
+  const el = document.getElementById('q-list');
+  if(list.length === 0){
+    el.innerHTML = `<div style="font-size:0.78rem;color:var(--ink-soft);text-align:center;padding:16px 0;">還沒有記錄的問題</div>`;
+  } else {
+    el.innerHTML = list.map((n, i)=>`
+      <div class="q-item">
+        <div class="q-item-time">${esc(n.time)}</div>
+        <div class="q-item-text">${esc(n.text)}</div>
+        <div class="q-item-actions">
+          <button data-copy="${i}">📋 複製</button>
+          <button data-del="${i}">🗑 刪除</button>
+        </div>
+      </div>
+    `).slice().reverse().join('');
+  }
+  updateQBadge(list.length);
+  el.querySelectorAll('[data-copy]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const idx = parseInt(b.dataset.copy);
+      const text = loadQNotes()[idx].text;
+      const done = ()=>{ b.textContent = '✅ 已複製'; setTimeout(()=>{ b.textContent = '📋 複製'; }, 1500); };
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(done).catch(()=> alert('複製失敗，麻煩手動選取文字複製'));
+      } else {
+        alert('這個瀏覽器不支援自動複製，麻煩手動選取文字複製：\n\n' + text);
+      }
+    });
+  });
+  el.querySelectorAll('[data-del]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const idx = parseInt(b.dataset.del);
+      const list2 = loadQNotes();
+      list2.splice(idx, 1);
+      saveQNotes(list2);
+      renderQList();
+    });
+  });
+}
+
+document.getElementById('q-fab').addEventListener('click', ()=>{
+  const panel = document.getElementById('q-panel');
+  const opening = panel.style.display === 'none' || !panel.style.display;
+  panel.style.display = opening ? 'flex' : 'none';
+  if(opening) renderQList();
+});
+document.getElementById('q-panel-close').addEventListener('click', ()=>{
+  document.getElementById('q-panel').style.display = 'none';
+});
+document.getElementById('q-save-btn').addEventListener('click', ()=>{
+  const ta = document.getElementById('q-input');
+  const text = ta.value.trim();
+  if(!text) return;
+  const list = loadQNotes();
+  list.push({ text, time: new Date().toLocaleString('zh-TW', {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'}) });
+  saveQNotes(list);
+  ta.value = '';
+  renderQList();
+});
+
+updateQBadge(loadQNotes().length);
+
 /* ---------- INIT ---------- */
 renderDailyGoal();
 renderGrammar();
 </script>
+
+<button class="q-fab" id="q-fab" title="有問題想問？先記下來">💬</button>
+<div class="q-panel" id="q-panel">
+  <div class="q-panel-head">
+    <span>📝 問題筆記本</span>
+    <button class="q-panel-close" id="q-panel-close">✕</button>
+  </div>
+  <div class="q-panel-note">這個網頁沒有後端，沒辦法即時傳訊息給我——這裡只是先幫你把問題記下來，之後你自己跟我聊天時複製過去問就好。</div>
+  <textarea id="q-input" placeholder="想到什麼問題就打在這裡…" rows="3"></textarea>
+  <button class="action btn-primary" id="q-save-btn" style="width:100%;">儲存這個問題</button>
+  <div class="q-list" id="q-list"></div>
+</div>
 
 </body>
 </html>
