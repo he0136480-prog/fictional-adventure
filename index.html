@@ -836,6 +836,7 @@
 
     <div class="card">
       <h3>單字庫（<span id="word-count">0</span>）</h3>
+      <div class="sub" id="batch-status" style="margin-bottom:10px;"></div>
       <div class="word-list" id="word-list"></div>
     </div>
 
@@ -948,14 +949,80 @@ const SEED = [
     exampleZh:"我記得你的名字。" }
 ];
 
-function seedToWord(s, i){
+// 第二批解鎖單字：第一批 20 個全部練到 Box 5（熟練）後自動解鎖，不用手動新增
+const SEED_BATCH2 = [
+  { en:"achieve", zh:"達成", example:"She achieved her goal.", syllables:"a·chieve", pos:"動詞", emoji:"🏆",
+    ipa:"/əˈtʃiv/", phonicsNote:"重音在第二音節。「ie」在這裡發長母音 /i/（像 believe、relieve），是常見的固定拼法組合。",
+    exampleZh:"她達成了她的目標。" },
+  { en:"avoid", zh:"避免", example:"Try to avoid mistakes.", syllables:"a·void", pos:"動詞", emoji:"🚫",
+    ipa:"/əˈvɔɪd/", phonicsNote:"重音在第二音節。「oi」是雙母音組合，固定發 /ɔɪ/，跟 coin、join 是同一種規則。",
+    exampleZh:"盡量避免犯錯。" },
+  { en:"behavior", zh:"行為", example:"His behavior was strange.", syllables:"be·hav·ior", pos:"名詞", emoji:"🎭",
+    ipa:"/bɪˈheɪvjər/", phonicsNote:"重音在第二音節。字尾「-ior」弱化成模糊音，唸起來接近 /jər/。",
+    exampleZh:"他的行為很奇怪。" },
+  { en:"benefit", zh:"好處、使受益", example:"This will benefit everyone.", syllables:"ben·e·fit", pos:"名詞", emoji:"🎁",
+    ipa:"/ˈbɛnəfɪt/", phonicsNote:"重音在第一音節，後面的音節都弱化，整個字唸得快而輕。",
+    exampleZh:"這會讓每個人都受益。" },
+  { en:"challenge", zh:"挑戰", example:"It was a big challenge.", syllables:"chal·lenge", pos:"名詞", emoji:"🧗",
+    ipa:"/ˈtʃælɪndʒ/", phonicsNote:"重音在第一音節。字尾「-enge」發 /ɪndʒ/，跟 change 的 「ge」是同一種軟音規則。",
+    exampleZh:"那是一個很大的挑戰。" },
+  { en:"community", zh:"社群、社區", example:"We live in a small community.", syllables:"com·mu·ni·ty", pos:"名詞", emoji:"🏘️",
+    ipa:"/kəˈmjunəti/", phonicsNote:"重音在第二音節，開頭 com- 弱化成模糊音 /kə/。",
+    exampleZh:"我們住在一個小社區裡。" },
+  { en:"consider", zh:"考慮", example:"Please consider my offer.", syllables:"con·sid·er", pos:"動詞", emoji:"🤔",
+    ipa:"/kənˈsɪdər/", phonicsNote:"重音在第二音節，開頭 con- 弱化成模糊音，跟 compare、continue 是同一種模式。",
+    exampleZh:"請考慮我的提議。" },
+  { en:"contain", zh:"包含", example:"This box contains books.", syllables:"con·tain", pos:"動詞", emoji:"📦",
+    ipa:"/kənˈteɪn/", phonicsNote:"重音在第二音節。「ai」固定發長母音 /eɪ/，這個規則已經出現過很多次了。",
+    exampleZh:"這個箱子裝著書。" },
+  { en:"create", zh:"創造", example:"Artists create new things.", syllables:"cre·ate", pos:"動詞", emoji:"🎨",
+    ipa:"/kriˈeɪt/", phonicsNote:"重音在第二音節。「e」單獨成一個音節發 /i/，不要唸成一個音節的 creat。",
+    exampleZh:"藝術家創造新事物。" },
+  { en:"develop", zh:"發展", example:"The city is developing fast.", syllables:"de·vel·op", pos:"動詞", emoji:"🌱",
+    ipa:"/dɪˈvɛləp/", phonicsNote:"重音在第二音節，前後音節都弱化。",
+    exampleZh:"這座城市發展得很快。" },
+  { en:"environment", zh:"環境", example:"We must protect the environment.", syllables:"en·vi·ron·ment", pos:"名詞", emoji:"🌍",
+    ipa:"/ɪnˈvaɪrənmənt/", phonicsNote:"重音在第二音節。中間「ron」口語常被輕輕帶過，整個字唸起來比看起來短。",
+    exampleZh:"我們必須保護環境。" },
+  { en:"experience", zh:"經驗、經歷", example:"I have work experience.", syllables:"ex·pe·ri·ence", pos:"名詞", emoji:"🎫",
+    ipa:"/ɪkˈspɪriəns/", phonicsNote:"重音在第二音節。",
+    exampleZh:"我有工作經驗。" },
+  { en:"focus", zh:"專注", example:"Focus on your studies.", syllables:"fo·cus", pos:"動詞", emoji:"🎯",
+    ipa:"/ˈfoʊkəs/", phonicsNote:"重音在第一音節。「o」在開音節（後面沒有子音卡住）發長音 /oʊ/。",
+    exampleZh:"專注在你的學業上。" },
+  { en:"increase", zh:"增加", example:"Prices increased this year.", syllables:"in·crease", pos:"動詞", emoji:"📈",
+    ipa:"/ɪnˈkris/", phonicsNote:"這個字很特別：當名詞時重音在第一音節，當動詞時重音在第二音節。很多「名詞/動詞同形」的字都有這種「重音移動」規則，像 record、present 也是。",
+    exampleZh:"今年物價上漲了。" },
+  { en:"include", zh:"包括", example:"The price includes tax.", syllables:"in·clude", pos:"動詞", emoji:"➕",
+    ipa:"/ɪnˈklud/", phonicsNote:"重音在第二音節。",
+    exampleZh:"這個價格含稅。" },
+  { en:"influence", zh:"影響", example:"Friends influence our choices.", syllables:"in·flu·ence", pos:"名詞", emoji:"🧲",
+    ipa:"/ˈɪnfluəns/", phonicsNote:"重音在第一音節。",
+    exampleZh:"朋友會影響我們的選擇。" },
+  { en:"involve", zh:"涉及", example:"The plan involves risk.", syllables:"in·volve", pos:"動詞", emoji:"🔗",
+    ipa:"/ɪnˈvɑlv/", phonicsNote:"重音在第二音節。",
+    exampleZh:"這個計畫涉及風險。" },
+  { en:"maintain", zh:"維持", example:"Maintain a healthy diet.", syllables:"main·tain", pos:"動詞", emoji:"🔧",
+    ipa:"/meɪnˈteɪn/", phonicsNote:"重音在第二音節。兩個音節都有「ai」，都固定發 /eɪ/，同一個字裡重複出現同一個規則。",
+    exampleZh:"維持健康的飲食。" },
+  { en:"purpose", zh:"目的", example:"What is the purpose of this?", syllables:"pur·pose", pos:"名詞", emoji:"🧭",
+    ipa:"/ˈpɜrpəs/", phonicsNote:"重音在第一音節。「ur」組合發捲舌音 /ɜr/，跟 turn、burn 是同一種發音。",
+    exampleZh:"這個的目的是什麼？" },
+  { en:"reduce", zh:"減少", example:"Reduce your sugar intake.", syllables:"re·duce", pos:"動詞", emoji:"📉",
+    ipa:"/rɪˈdus/", phonicsNote:"重音在第二音節。",
+    exampleZh:"減少你的糖分攝取。" }
+];
+
+const VOCAB_BATCHES = { 2: SEED_BATCH2 }; // 之後要加第三批，直接在這裡加 3: SEED_BATCH3 即可
+
+function seedToWord(s, i, batch){
   return {
-    id: 'w'+Date.now()+i,
+    id: 'w'+Date.now()+i+'b'+(batch||1),
     en:s.en, syllables:s.syllables||'', pos:s.pos||'', emoji:s.emoji||'',
     image:s.image||'', credit:s.credit||'', creditUrl:s.creditUrl||'',
     ipa:s.ipa||'', phonicsNote:s.phonicsNote||'',
     meanings:[{zh:s.zh, example:s.example||'', exampleZh:s.exampleZh||''}],
-    box:1, nextReview: todayStr()
+    box:1, nextReview: todayStr(), batch: batch||1
   };
 }
 
@@ -975,7 +1042,7 @@ function esc(str){
 function loadVocab(){
   let v = JSON.parse(localStorage.getItem(LS_VOCAB) || 'null');
   if(!v){
-    v = SEED.map(seedToWord);
+    v = SEED.map((s,i)=>seedToWord(s, i, 1));
     saveVocab(v);
   } else {
     // 相容舊版資料：把舊的單一 zh/example 轉成 meanings 陣列，並自動補上新版才有的音標／發音原理／例句翻譯（不影響已累積的複習進度）
@@ -1552,7 +1619,7 @@ function makeQuizController({ getData, areaId, historyKey }){
 }
 
 /* ---------- 主單字庫 / 俗語支線 各自的牌組與測驗 ---------- */
-const vocabDeck = makeFlashDeck({ getData:()=>vocab, saveData:saveVocab, areaId:'flash-area', prefix:'v', onReview:(w)=>{ bumpDailyGoal(); bumpMilestone(w.id); } });
+const vocabDeck = makeFlashDeck({ getData:()=>vocab, saveData:saveVocab, areaId:'flash-area', prefix:'v', onReview:(w)=>{ bumpDailyGoal(); bumpMilestone(w.id); checkBatchUnlock(); } });
 const vocabQuiz = makeQuizController({ getData:()=>vocab, areaId:'quiz-area', historyKey:LS_QUIZ });
 
 const idiomDeck = makeFlashDeck({ getData:()=>idioms, saveData:saveIdioms, areaId:'idiom-flash-area', prefix:'idm', onReview:()=>renderTabBadges() });
@@ -2315,6 +2382,14 @@ let editingId = null;
 
 function renderManage(){
   document.getElementById('word-count').textContent = vocab.length;
+  const unlocked = loadUnlockedBatches();
+  const hasMore = !!VOCAB_BATCHES[unlocked + 1];
+  const batchEl = document.getElementById('batch-status');
+  if(batchEl){
+    batchEl.textContent = hasMore
+      ? `目前解鎖到第 ${unlocked} 批，把這批單字全部練到 Box 5（熟練）就會自動解鎖下一批新單字`
+      : `目前解鎖到第 ${unlocked} 批（最新一批），之後還會持續加入更多批次`;
+  }
   const list = document.getElementById('word-list');
   if(vocab.length===0){
     list.innerHTML = `<div class="empty-msg">還沒有單字，新增一些吧！</div>`;
@@ -2445,8 +2520,9 @@ document.getElementById('bulk-add-btn').addEventListener('click', ()=>{
 
 document.getElementById('reset-vocab-btn').addEventListener('click', ()=>{
   if(!confirm('確定要清空目前單字，換成 20 個簡易起始單字嗎？')) return;
-  vocab = SEED.map(seedToWord);
+  vocab = SEED.map((s,i)=>seedToWord(s, i, 1));
   saveVocab(vocab);
+  saveUnlockedBatches(1);
   resetForm();
   renderManage();
   alert('已重設完成！');
@@ -2462,6 +2538,7 @@ document.getElementById('export-btn').addEventListener('click', ()=>{
     idiomQuizHistory: JSON.parse(localStorage.getItem(LS_IDIOM_QUIZ) || '[]'),
     readingProgress: loadReadingProgress(),
     grammarProgress: loadGrammarProgress(),
+    unlockedBatches: loadUnlockedBatches(),
     exportedAt: new Date().toISOString()
   };
   const blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
@@ -2501,6 +2578,7 @@ document.getElementById('import-file').addEventListener('change', (e)=>{
       if(data.idiomQuizHistory) localStorage.setItem(LS_IDIOM_QUIZ, JSON.stringify(data.idiomQuizHistory));
       if(data.readingProgress) saveReadingProgress(data.readingProgress);
       if(data.grammarProgress) saveGrammarProgress(data.grammarProgress);
+      if(data.unlockedBatches) saveUnlockedBatches(data.unlockedBatches);
       resetForm();
       renderManage();
       alert('匯入完成！');
@@ -2571,10 +2649,39 @@ function renderDailyGoal(){
   renderTabBadges();
 }
 
-function showGoalToast(){
+function showGoalToast(text){
   const toast = document.getElementById('goal-toast');
+  if(text) toast.textContent = text;
   toast.classList.add('show');
-  setTimeout(()=> toast.classList.remove('show'), 2600);
+  setTimeout(()=>{
+    toast.classList.remove('show');
+    if(text) toast.textContent = '🎉 今日目標達成！'; // 還原成預設文字，不影響原本的每日目標提示
+  }, 3200);
+}
+
+/* ---------- 單字批次解鎖：學完一批自動解鎖下一批 ---------- */
+const LS_UNLOCKED_BATCHES = 'el_unlocked_batches';
+
+function loadUnlockedBatches(){
+  return parseInt(localStorage.getItem(LS_UNLOCKED_BATCHES) || '1', 10);
+}
+function saveUnlockedBatches(n){ localStorage.setItem(LS_UNLOCKED_BATCHES, String(n)); }
+
+function checkBatchUnlock(){
+  const current = loadUnlockedBatches();
+  const nextSeed = VOCAB_BATCHES[current + 1];
+  if(!nextSeed) return; // 目前還沒有再下一批的內容
+  const currentBatchWords = vocab.filter(w => (w.batch || 1) === current);
+  if(currentBatchWords.length === 0) return;
+  const allMastered = currentBatchWords.every(w => w.box >= 5);
+  if(!allMastered) return;
+
+  const newWords = nextSeed.map((s, i) => seedToWord(s, i, current + 1));
+  vocab.push(...newWords);
+  saveVocab(vocab);
+  saveUnlockedBatches(current + 1);
+  showGoalToast(`🎉 這批單字全部熟練了！解鎖了 ${newWords.length} 個新單字`);
+  renderTabBadges();
 }
 
 function bumpDailyGoal(){
