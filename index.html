@@ -859,6 +859,18 @@
 
 </main>
 
+<button class="q-fab" id="q-fab" title="有問題想問？先記下來">💬</button>
+<div class="q-panel" id="q-panel">
+  <div class="q-panel-head">
+    <span>📝 問題筆記本</span>
+    <button class="q-panel-close" id="q-panel-close">✕</button>
+  </div>
+  <div class="q-panel-note">這個網頁沒有後端，沒辦法即時傳訊息給我——這裡只是先幫你把問題記下來，之後你自己跟我聊天時複製過去問就好。</div>
+  <textarea id="q-input" placeholder="想到什麼問題就打在這裡…" rows="3"></textarea>
+  <button class="action btn-primary" id="q-save-btn" style="width:100%;">儲存這個問題</button>
+  <div class="q-list" id="q-list"></div>
+</div>
+
 <script>
 const LS_VOCAB = 'el_vocab';
 const LS_LOG = 'el_studylog';
@@ -2844,18 +2856,6 @@ updateQBadge(loadQNotes().length);
 renderDailyGoal();
 renderGrammar();
 </script>
-
-<button class="q-fab" id="q-fab" title="有問題想問？先記下來">💬</button>
-<div class="q-panel" id="q-panel">
-  <div class="q-panel-head">
-    <span>📝 問題筆記本</span>
-    <button class="q-panel-close" id="q-panel-close">✕</button>
-  </div>
-  <div class="q-panel-note">這個網頁沒有後端，沒辦法即時傳訊息給我——這裡只是先幫你把問題記下來，之後你自己跟我聊天時複製過去問就好。</div>
-  <textarea id="q-input" placeholder="想到什麼問題就打在這裡…" rows="3"></textarea>
-  <button class="action btn-primary" id="q-save-btn" style="width:100%;">儲存這個問題</button>
-  <div class="q-list" id="q-list"></div>
-</div>
 
 </body>
 </html>
